@@ -1,9 +1,9 @@
 # Breadth-first search is a particular search on a graph.
-# Breadth-first search is useful when you need to find the length of shortest path from one vertex to another (in unweighted graph).
+# Breadth-first search is useful when you need to find the length of a shortest path from one vertex to another (in unweighted graph).
 # Also, with BFS you can traverse a graph
-# Time complexity O(n + m), where n is a number of vertices and m is a number of edges
+# Time complexity O(n + m), where n is the number of vertices and m is thr number of edges
 # Breadth-first search implementation is non-recursive.
-# Here is example:
+# Here is an example:
 import collections
 
 edges = [[1,2], [2,3], [5,2], [1, 5]]
@@ -31,8 +31,8 @@ print(bfs(1), bfs(3))
 # If you use BFS for search on matrices, you need modification:
 # Labirint problem:
 # For instance, you have a matrix (m x n) with zeros and ones,
-# you can move from current cell on one of four adjacent cells whenever this adjacent cell is filled by zero
-# initial position is (0, 0), find the length of shortest path to the right-bottom cell (m-1, n-1),
+# you can move from the current cell to one of four adjacent cells whenever that adjacent cell is filled by zero
+# initial position is (0, 0), find the length of a shortest path to the right-bottom cell (m-1, n-1),
 # if you can't reach the right-bottom cell, return -1
 
 # 0 1 0 0 0
@@ -53,14 +53,14 @@ def bfs_matrix(start):
     while q:
         j += 1
         r, c, dist = q.popleft()
-        print(j, (r, c))
+        # print(j, (r, c))
         # seen.add((r, c))
         if (r, c) == (m-1, n-1): return dist
         for dr, dc in dirs:
             if r+dr >= m or r+dr < 0 or c+dc >= n or c+dc < 0: continue
             if (r+dr, c+dc) in seen or labirint[r+dr][c+dc]: continue
             q.append((r+dr, c+dc, dist+1))
-            seen.add((r+dr, c+dc))
+            seen.add((r+dr, c+dc)) # to escape repetitions in queue in matrix case
 
     return -1
 
