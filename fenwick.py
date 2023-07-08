@@ -1,4 +1,4 @@
-# Fermwick Tree (Binary Indexed Tree)
+# Fenwick Tree (Binary Indexed Tree)
 #
 # Fenwick Tree is a data structure that can efficiently update elements and calculate prefix sums in a table of numbers.
 #
@@ -55,3 +55,36 @@ class Fenwick:
     def suff(self, ql):
         # [ql, n)
         return self.pref(self.n) - self.pref(ql)
+
+
+
+fenwick = Fenwick(10, [5,4,6,7,2,3,1,2,3,4])
+print(fenwick.arr)
+print(fenwick.query(0, 10))
+print(fenwick.query(0, 5))
+print(fenwick.query(5, 10))
+print(fenwick.query(2, 8))
+print(fenwick.add(3, 7))
+print(fenwick.arr)
+print(fenwick.query(0, 10))
+print(fenwick.query(0, 5))
+print(fenwick.query(5, 10))
+print(fenwick.query(2, 8))
+
+# Applications of Fenwick Tree
+#
+# 1. Keeping track of positions problem
+#
+# Given an array of n numbers, we need to efficiently answer q queries of the form:
+    # What is the position of the first element that is greater than or equal to x?
+    # What is the position of the last element that is less than or equal to x?
+    # What is the position of the first element that is greater than x?
+    # What is the position of the last element that is less than x?
+    # What is the sum of the first k elements?
+    # What is the sum of the elements from l to r?
+    # What is the smallest element in the first k elements?
+    # What is the greatest element in the first k elements?
+    # What is the smallest element in the elements from l to r?
+    # What is the greatest element in the elements from l to r?
+    # What is the number of elements in the first k elements that are greater than or equal to x?
+    # What is the number of elements in the elements from l to r that are greater than or equal to x?
