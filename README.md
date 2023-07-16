@@ -1,2 +1,2 @@
 # dsa-templates
-DSA templates for LeetCode contests
+Collection of data structures and algos in Python3
