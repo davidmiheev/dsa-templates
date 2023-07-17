@@ -8,7 +8,7 @@ def max_subarray_sum(arr):
     max_ending_here = arr[0]
     for i in range(1, len(arr)):
         max_ending_here = max(arr[i], max_ending_here + arr[i])
-        max_so_far = max(max_so_far, max_endin)
+        max_so_far = max(max_so_far, max_ending_here)
 
     return max_so_far
 
@@ -46,17 +46,8 @@ def max_subarray_sum_circular(arr):
 # Range Sum Queries
 #
 # Given an array of n numbers, we need to efficiently answer q queries of the form:
-    # What is the sum of elements from index l to r (with 0-based indexing)?
-    # What is the minimum element from index l to r (with 0-based indexing)?
-    # What is the maximum element from index l to r (with 0-based indexing)?
-    # What is the greatest common divisor of elements from index l to r (with 0-based indexing)?
-    # What is the least common multiple of elements from index l to r (with 0-based indexing)?
-    # What is the bitwise AND of elements from index l to r (with 0-based indexing)?
-    # What is the bitwise OR of elements from index l to r (with 0-based indexing)?
-    # What is the bitwise XOR of elements from index l to r (with 0-based indexing)?
-    # What is the number of elements from index l to r (with 0-based indexing) that are greater than or equal to x?
-    #
-
+#
+# What is the sum of elements from index l to r (with 0-based indexing)?
 def range_sum_queries(arr):
     n = len(arr)
     dp = [0] * (n + 1)
@@ -68,6 +59,7 @@ def range_sum_queries(arr):
 
     return query
 
+# What is the minimum/maximum element from index l to r (with 0-based indexing)?
 def range_min_queries(arr):
 
     def build(arr):
@@ -77,7 +69,7 @@ def range_min_queries(arr):
             dp[i][i] = arr[i]
         for i in range(n):
             for j in range(i + 1, n):
-                dp[i][j] = min(dp[i][j - 1], arr[j])
+                dp[i][j] = min(dp[i][j - 1], arr[j]) # change to max for max queries
         return dp
 
     def query(dp, l, r):
@@ -85,23 +77,9 @@ def range_min_queries(arr):
 
     return build, query
 
-def range_max_queries(arr):
-
-    def build(arr):
-        n = len(arr)
-        dp = [[0] * n for _ in range(n)]
-        for i in range(n):
-            dp[i][i] = arr[i]
-        for i in range(n):
-            for j in range(i + 1, n):
-                dp[i][j] = max(dp[i][j - 1], arr[j])
-        return dp
-
-    def query(dp, l, r):
-        return dp[l][r]
-
-    return build, query
-
+# What is the greatest common divisor of elements from index l to r (with 0-based indexing)?
+# What is the least common multiple of elements from index l to r (with 0-based indexing)?
+from math import gcd, lcm
 def range_gcd_queries(arr):
 
     def build(arr):
@@ -111,7 +89,7 @@ def range_gcd_queries(arr):
             dp[i][i] = arr[i]
         for i in range(n):
             for j in range(i + 1, n):
-                dp[i][j] = gcd(dp[i][j - 1], arr[j])
+                dp[i][j] = gcd(dp[i][j - 1], arr[j]) # change to lcm for lcm queries
         return dp
 
     def query(dp, l, r):
@@ -119,23 +97,7 @@ def range_gcd_queries(arr):
 
     return build, query
 
-def range_lcm_queries(arr):
-
-    def build(arr):
-        n = len(arr)
-        dp = [[0] * n for _ in range(n)]
-        for i in range(n):
-            dp[i][i] = arr[i]
-        for i in range(n):
-            for j in range(i + 1, n):
-                dp[i][j] = lcm(dp[i][j - 1], arr[j])
-        return dp
-
-    def query(dp, l, r):
-        return dp[l][r]
-
-    return build, query
-
+# What is the bitwise AND/OR/XOR of elements from index l to r (with 0-based indexing)?
 def range_and_queries(arr):
 
     def build(arr):
@@ -145,7 +107,7 @@ def range_and_queries(arr):
             dp[i][i] = arr[i]
         for i in range(n):
             for j in range(i + 1, n):
-                dp[i][j] = dp[i][j - 1] & arr[j]
+                dp[i][j] = dp[i][j - 1] & arr[j] # change to | for OR queries, ^ for XOR queries
         return dp
 
     def query(dp, l, r):
@@ -153,90 +115,39 @@ def range_and_queries(arr):
 
     return build, query
 
-def range_or_queries(arr):
+# What is the number of elements from index l to r (with 0-based indexing) that are greater than or equal to x?
+
+def range_count_queries(arr, x):
 
     def build(arr):
         n = len(arr)
         dp = [[0] * n for _ in range(n)]
         for i in range(n):
-            dp[i][i] = arr[i]
+            dp[i][i] = 1 if arr[i] >= x else 0
         for i in range(n):
             for j in range(i + 1, n):
-                dp[i][j] = dp[i][j - 1] | arr[j]
+                dp[i][j] = dp[i][j - 1] + (1 if arr[j] >= x else 0)
         return dp
 
     def query(dp, l, r):
         return dp[l][r]
 
     return build, query
-
-def range_xor_queries(arr):
-
-    def build(arr):
-        n = len(arr)
-        dp = [[0] * n for _ in range(n)]
-        for i in range(n):
-            dp[i][i] = arr[i]
-        for i in range(n):
-            for j in range(i + 1, n):
-                dp[i][j] = dp[i][j - 1] ^ arr[j]
-        return dp
-
-    def query(dp, l, r):
-        return dp[l][r]
-
-    return build, query
-
-def range_count_queries(arr):
-
-    def build(arr):
-        n = len(arr)
-        dp = [[0] * n for _ in range(n)]
-        for i in range(n):
-            dp[i][i] = 1
-        for i in range(n):
-            for j in range(i + 1, n):
-                dp[i][j] = dp[i][j - 1] + 1
-        return dp
-
-    def query(dp, l, r):
-        return dp[l][r]
-
-    return build, query
-
 
 # Recursive DP
-# 1. Top-down with memoization
-# 2. Bottom-up with tabulation
-# 3. Bottom-up with tabulation + space optimization
-# 4. Bottom-up with tabulation + space optimization + state compression
-# 5. Bottom-up with tabulation + space optimization + state compression + rolling array
-# 6. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking
-# 7. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking + monotonicity
-# 8. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking + monotonicity + divide and conquer
-# 9. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking + monotonicity + divide and conquer + binary search
-# 10. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking + monotonicity + divide and conquer + binary search + greedy
-# 11. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking + monotonicity + divide and conquer + binary search + greedy + two pointers
-# 12. Bottom-up with tabulation + space optimization + state compression + rolling array + bit masking + monotonicity + divide and conquer + binary search + greedy + two pointers + sliding window
-#
-#
-# 1. Top-down with memoization
+
+from functools import cache
 
 def top_down_memoization(arr):
 
     @cache
     def dp(i):
-        if i == 0:
-            return 0
-        if i == 1:
-            return arr[0]
-        if i == 2:
-            return max(arr[0], arr[1])
-        return max(dp(i - 1), dp(i - 2) + arr[i - 1])
+        if i < 0: return 0
+        return max(dp(i - 1), dp(i - 1) + arr[i])
 
-    return dp(len(arr))
+    return dp(len(arr)-1)
 
-# 2. Bottom-up with tabulation
+# Bottom-up with tabulation
 
 def bottom_up_tabulation(arr):
 
@@ -247,7 +158,7 @@ def bottom_up_tabulation(arr):
         dp[i] = max(dp[i - 1], dp[i - 2] + arr[i - 1])
     return dp[n]
 
-# 3. Bottom-up with tabulation + space optimization
+# Bottom-up with tabulation + space optimization
 
 def bottom_up_tabulation_space_optimization(arr):
 
@@ -259,11 +170,10 @@ def bottom_up_tabulation_space_optimization(arr):
     return dp[n % 3]
 
 # State machine
-# 1. State machine with transition table
-# 2. State machine with transition function
-# 3. State machine with transition function + space optimization
 
 # 1. State machine with transition table
+
+from math import inf
 
 def state_machine_with_transition_table(arr):
 
@@ -271,7 +181,7 @@ def state_machine_with_transition_table(arr):
         n = len(arr)
         dp = [[0] * 2 for _ in range(n + 1)]
         dp[0][0] = 0
-        dp[0][1] = -float('inf')
+        dp[0][1] = -inf
         for i in range(1, n + 1):
             dp[i][0] = max(dp[i - 1][0], dp[i - 1][1] + arr[i - 1])
             dp[i][1] = max(dp[i - 1][1], dp[i - 1][0] - arr[i - 1])
@@ -288,10 +198,13 @@ def state_machine_with_transition_function(arr):
         n = len(arr)
         dp = [0] * 2
         dp[0] = 0
-        dp[1] = -float('inf')
+        dp[1] = -inf
         for i in range(1, n + 1):
             dp[0], dp[1] = max(dp[0], dp[1] + arr[i - 1]), max(dp[1], dp[0] - arr[i - 1])
 
         return dp[0]
 
     return build(arr)
+
+# DP with bitmask
+#
