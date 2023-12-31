@@ -5,11 +5,13 @@
 # Path: interval_tree.py
 #
 
+from math import inf
+
 class IntervalTree:
 
     def __init__(self, intervals):
         self.root = None
-        self.intervals = intervals
+        self.intervals = sorted(intervals, key=lambda x: x.start)
         self.__build()
 
     def __build(self):
@@ -23,6 +25,12 @@ class IntervalTree:
         root = TreeNode(intervals[mid])
         root.left = self.__build_helper(intervals[:mid])
         root.right = self.__build_helper(intervals[mid+1:])
+
+        # Update max value
+        left_max = root.left.max if root.left else -inf
+        right_max = root.right.max if root.right else -inf
+        root.max = max(root.interval.end, left_max, right_max)
+
         return root
 
     def query(self, interval):
@@ -32,13 +40,17 @@ class IntervalTree:
         if not root:
             return []
 
+        results = []
         if root.interval.overlap(interval):
-            return [root.interval] + self.__query_helper(root.left, interval) + self.__query_helper(root.right, interval)
+            results.append(root.interval)
 
         if root.left and root.left.max >= interval.start:
-            return self.__query_helper(root.left, interval)
+            results.extend(self.__query_helper(root.left, interval))
 
-        return self.__query_helper(root.right, interval)
+        if root.right and root.interval.start <= interval.end:
+            results.extend(self.__query_helper(root.right, interval))
+
+        return results
 
     def add(self, interval):
         self.intervals.append(interval)
