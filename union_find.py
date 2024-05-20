@@ -55,3 +55,19 @@ class UnionFindSimple:
 
     def are_connected(self, x, y):
         return self.find(x) == self.find(y)
+
+
+# Example usage:
+vertices = {1, 2, 3, 4, 5, 6, 7}
+uf = UnionFind(vertices)
+graph = [(1, 2), (2, 3), (1, 3), (1, 4), (2, 5), (6, 7)]
+connected_components = len(vertices)
+cycles = 0
+for x, y in graph:
+    if uf.are_connected(x, y):
+        cycles += 1
+    else:
+        connected_components -= 1
+        uf.join(x, y)
+
+print(f'N of connected components: {connected_components}, N of cycles: {cycles}')
