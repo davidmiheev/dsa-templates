@@ -11,14 +11,14 @@ def shortestPath(edges: List[List[int]], costs: List[int], start: int, end: int)
         graph[a] += [(b, costs[j])]
         graph[b] += [(a, costs[j])]
 
-    seen = {}
+    seen = {start: 0}
     pq = [(0, start)]
     while pq:
         dist, vert = heappop(pq)
-        seen[vert] = dist
         if vert == end: return dist
         for neighbor, cost in graph[vert]:
             if neighbor in seen and seen[neighbor] <= dist+cost: continue
+            seen[neighbor] = dist+cost
             heappush(pq, (dist+cost, neighbor))
 
     return -1

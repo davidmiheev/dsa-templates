@@ -1,3 +1,40 @@
+
+# Template classic
+"""
+def fn(arr, target):
+    left = 0
+    right = len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            # do something
+            return
+        if arr[mid] > target:
+            right = mid - 1
+        else:
+            left = mid + 1
+
+    # left is the insertion point
+    return left
+"""
+
+# Template for optimisation problems
+"""
+def optimize(nums, p):
+    left, right = min(nums), max(nums)
+    def feasible(val):
+        # ...
+        return val >= p
+
+    while left <= right:
+        mid = (left+right)//2
+        if feasible(mid):
+            right = mid - 1
+        else: left = mid + 1
+
+    return left
+"""
+
 # Classic application: search element in sorted array with O(log n) time complexity
 # In python there is built-in library for binary search: bisect
 # Example with this library:
@@ -51,9 +88,9 @@ def bin_search2(nums, target):
     # Post-processing:
     if nums[left] == target:
         return left
-    
+
     return -1
-    
+
 # Template 3:
 
 # An alternative way to implement Binary Search
@@ -115,17 +152,3 @@ class Solution:
 
 sol = Solution()
 print(sol.minimizeMax([10,1,2,7,1,3], p = 2))
-
-# Template
-def optimize(nums, p):
-    left, right = min(nums), max(nums)
-    def feasible(val):
-        # ...
-        return val >= p
-
-    while left <= right:
-        mid = (left+right)//2
-        if feasible(mid): right = mid - 1
-        else: left = mid + 1
-
-    return left
