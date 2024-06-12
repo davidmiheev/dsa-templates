@@ -49,7 +49,7 @@ dirs = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 start = (0, 0)
 def bfs_matrix(start):
     seen = set([start])
-    q = collections.deque([(start[0], start[1], 0)])
+    q = deque([(start[0], start[1], 0)])
     j = 0
     while q:
         j += 1
