@@ -4,18 +4,19 @@
 # Time complexity O(n + m), where n is the number of vertices and m is thr number of edges
 # Breadth-first search implementation is non-recursive.
 # Here is an example:
-import collections
+from collections import defaultdict
+from collections import deque
 
 edges = [[1,2], [2,3], [5,2], [1, 5]]
 target = 5
-graph = collections.defaultdict(list)
+graph = defaultdict(list)
 for a, b in edges:
     graph[a] += [b]
     graph[b] += [a] # this line for undirected graphs only
 
 def bfs(start):
     seen = set()
-    q = collections.deque([(start, 0)])
+    q = deque([(start, 0)])
     while q:
         vert, dist = q.popleft()
         seen.add(vert)
