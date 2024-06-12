@@ -10,16 +10,48 @@
 #
 # The tree structure allows us to efficiently update elements and calculate prefix sums.
 #
-# The following picture shows the idea of Fenwick Tree:
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITUpdate.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITUpdate2.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum2.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum3.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum4.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum5.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum6.png
-    # https://www.geeksforgeeks.org/wp-content/uploads/BITSum7.png
+
+from typing import List
+
+class FenwickTree:
+
+    def __init__(self, nums: List[int]):
+        self.size = len(nums)
+        self.tree = [0] * (self.size + 1)
+        self.data = [0] * (self.size)
+
+        for i in range(self.size):
+            self.update(i, nums[i])
+
+    def update(self, index: int, val: int) -> None:
+        # Calculate the delta
+        delta = val - self.data[index]
+        self.data[index] = val
+        # Increment the index to match the 1-based index of the Fenwick Tree
+        index += 1
+        while index <= self.size:
+            self.tree[index] += delta
+            index += index & -index
+
+
+    def pref(self, index: int) -> int:
+        index += 1
+        result = 0
+        while index > 0:
+            result += self.tree[index]
+            index -= index & -index
+
+        return result
+
+    def sumRange(self, left: int, right: int) -> int:
+        return self.pref(right) - self.pref(left-1)
+
+
+nums = [1, 3, 5]
+fenwick = FenwickTree(nums)
+print(fenwick.sumRange(0, 2))
+fenwick.update(1, 2)
+print(fenwick.sumRange(0, 2))
 
 class Fenwick:
     def __init__(self, n, nums=None):
