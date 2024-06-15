@@ -10,10 +10,10 @@ def top_down_memo(arr):
     @cache
     def dp(i):
         if i == 0: return arr[0], arr[0]
-        max_so_far, global_max = dp(i-1)
-        max_so_far = max(arr[i], max_so_far + arr[i])
-        global_max = max(global_max, max_so_far)
-        return max_so_far, global_max
+        max_ending_here, max_so_far = dp(i-1)
+        max_ending_here = max(arr[i], max_ending_here + arr[i])
+        max_so_far = max(max_so_far, max_ending_here)
+        return max_ending_here, max_so_far
 
     _, ans = dp(len(arr)-1)
     return ans
