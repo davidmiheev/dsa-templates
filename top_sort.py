@@ -25,6 +25,17 @@
 # Path: top_sort.py
 
 def top_sort(graph):
+    '''
+    Topological sort of a directed acyclic graph (DAG)
+    Topological sort is useful when you need to perform a series of tasks
+    where each task has some dependencies on other tasks.
+
+    Time complexity: :math:`O(V + E)`, where V is the number of vertices and E is the number of edges
+    Space complexity: :math:`O(V)`
+
+    :param graph: dict
+    :return: list
+    '''
     seen = set()
     current_path = set()
     order = []

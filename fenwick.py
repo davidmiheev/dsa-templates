@@ -14,8 +14,22 @@
 from typing import List
 
 class FenwickTree:
+    '''
+    Fenwick Tree (Binary Indexed Tree)
+
+    Fenwick Tree is a data structure that can efficiently update elements
+    and calculate prefix sums in a table of numbers.
+
+
+    '''
 
     def __init__(self, nums: List[int]):
+        '''
+        Initialize the Fenwick Tree with the given array of numbers.
+
+        :type nums: List[int]
+        :rtype: None
+        '''
         self.size = len(nums)
         self.tree = [0] * (self.size + 1)
         self.data = [0] * (self.size)
@@ -24,6 +38,13 @@ class FenwickTree:
             self.update(i, nums[i])
 
     def update(self, index: int, val: int) -> None:
+        '''
+        Update the value of the element at index i to be val.
+
+        :type index: int
+        :type val: int
+        :rtype: None
+        '''
         # Calculate the delta
         delta = val - self.data[index]
         self.data[index] = val
@@ -35,6 +56,12 @@ class FenwickTree:
 
 
     def pref(self, index: int) -> int:
+        '''
+        Calculate the prefix sum up to index i.
+
+        :type index: int
+        :rtype: int
+        '''
         index += 1
         result = 0
         while index > 0:
@@ -44,6 +71,13 @@ class FenwickTree:
         return result
 
     def sumRange(self, left: int, right: int) -> int:
+        '''
+        Calculate the sum of elements from index l to r (with 0-based indexing).
+
+        :type left: int
+        :type right: int
+        :rtype: int
+        '''
         return self.pref(right) - self.pref(left-1)
 
 

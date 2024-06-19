@@ -48,6 +48,16 @@ m, n = len(labirint), len(labirint[0])
 dirs = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 start = (0, 0)
 def bfs_matrix(start):
+    '''
+    Find the length of a shortest path to the right-bottom cell (m-1, n-1)
+
+    Time complexity: :math:`O(mn)`
+    Space complexity: :math:`O(mn)`
+    where m is the number of rows and n is the number of columns in the matrix
+
+    :param start: tuple
+    :return: int
+    '''
     seen = set([start])
     q = deque([(start[0], start[1], 0)])
     j = 0

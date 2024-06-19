@@ -5,18 +5,45 @@
 from collections import defaultdict
 
 class UnionFind:
+    '''
+    Union-Find data structure
+    Union-Find data structure is a disjoint-set data structure
+    that keeps track of a set of elements partitioned into a number of disjoint (non-overlapping) subsets.
+
+
+    :type vertices: set
+    '''
     def __init__(self, vertices: set):
+        '''
+        Initialize the Union-Find data structure with the given set of vertices.
+
+        :type vertices: set
+        :rtype: None
+        '''
         self.group = defaultdict(int)
         self.rank = defaultdict(int)
         for i in vertices:
             self.group[i] = i
 
     def find(self, node: int) -> int:
+        '''
+        Find the group that the given node belongs to.
+
+        :type node: int
+        :rtype: int
+        '''
         if self.group[node] != node:
             self.group[node] = self.find(self.group[node])
         return self.group[node]
 
     def join(self, node1: int, node2: int):
+        '''
+        Join the groups that the given nodes belong to.
+
+        :type node1: int
+        :type node2: int
+        :rtype: None
+        '''
         group1 = self.find(node1)
         group2 = self.find(node2)
 
@@ -32,6 +59,13 @@ class UnionFind:
             self.rank[group2] += 1
 
     def are_connected(self, node1: int, node2: int) -> bool:
+        '''
+        Check if the given nodes belong to the same group.
+
+        :type node1: int
+        :type node2: int
+        :rtype: bool
+        '''
         return self.find(node1) == self.find(node2)
 
 

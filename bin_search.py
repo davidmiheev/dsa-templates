@@ -53,6 +53,18 @@ print(bisect.bisect_left(arr, 5))
 # No post-processing required because at each step, you are checking to see if the element has been found. If you reach the end, then you know the element is not found
 
 def bin_search1(nums, target):
+    '''
+    Given a sorted (in ascending order) integer array nums of n elements and a target value,
+    find the target value in the array.
+
+    Time complexity: :math:`O(\log n)`
+    Space complexity: :math:`O(1)`
+
+
+    :type nums: List[int]
+    :type target: int
+    :rtype: int
+    '''
     left, right = 0, len(nums) - 1
     while left <= right:
         mid = (left + right) // 2
@@ -74,6 +86,14 @@ def bin_search1(nums, target):
 # Post-processing required. Loop/Recursion ends when you have 1 element left. Need to assess if the remaining element meets the condition.
 
 def bin_search2(nums, target):
+    '''
+    Given a sorted (in ascending order) integer array nums of n elements and a target value,
+    find the target value in the array.
+    The array may contain duplicates.
+
+    :type nums: List[int]
+    :type target: int
+    '''
     left, right = 0, len(nums) - 1
     while left < right:
         mid = (left + right) // 2
@@ -99,6 +119,14 @@ def bin_search2(nums, target):
 # Post-processing required. Loop/Recursion ends when you have 2 elements left. Need to assess if the remaining elements meet the condition.
 
 def bin_search3(nums, target):
+    '''
+    Given a sorted (in ascending order) integer array nums of n elements and a target value,
+    find the target value in the array.
+    The array may contain duplicates.
+
+    :type nums: List[int]
+    :type target: int
+    '''
     left, right = 0, len(nums) - 1
     while left + 1 < right:
         mid = (left + right) // 2
