@@ -2,9 +2,6 @@
 #
 
 
-# Path: interval_tree.py
-#
-
 from math import inf
 
 class IntervalTree:

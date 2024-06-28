@@ -5,12 +5,15 @@ from collections import defaultdict
 from heapq import heappop, heappush
 from typing import List
 
+print('Dijkstra')
+
 def shortestPath(edges: List[List[int]], costs: List[int], start: int, end: int) -> int:
     '''
     Find the shortest path in a weighted graph from the start node to the end node.
     Dijkstra's algorithm is a greedy algorithm that finds the shortest path between nodes in a graph.
 
     Time complexity: :math:`O(E \log V)`
+
     Space complexity: :math:`O(E + V)`
 
     :type edges: List[List[int]]

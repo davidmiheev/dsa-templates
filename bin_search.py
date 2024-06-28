@@ -1,63 +1,12 @@
-
-# Template classic
-"""
-def fn(arr, target):
-    left = 0
-    right = len(arr) - 1
-    while left <= right:
-        mid = (left + right) // 2
-        if arr[mid] == target:
-            # do something
-            return
-        if arr[mid] > target:
-            right = mid - 1
-        else:
-            left = mid + 1
-
-    # left is the insertion point
-    return left
-"""
-
-# Template for optimisation problems
-"""
-def optimize(nums, p):
-    left, right = min(nums), max(nums)
-    def feasible(val):
-        # ...
-        return val >= p
-
-    while left <= right:
-        mid = (left+right)//2
-        if feasible(mid):
-            right = mid - 1
-        else: left = mid + 1
-
-    return left
-"""
-
-# Classic application: search element in sorted array with O(log n) time complexity
-# In python there is built-in library for binary search: bisect
-# Example with this library:
-
-import bisect
-
-arr = [1,3,4,5,6,7]
-print(bisect.bisect_left(arr, 5))
-
-# Binary Search:
-
-# Template 1:
-
-# Most basic and elementary form of Binary Search
-# Search Condition can be determined without comparing to the element's neighbors (or use specific elements around it)
-# No post-processing required because at each step, you are checking to see if the element has been found. If you reach the end, then you know the element is not found
+print('bin_search')
 
 def bin_search1(nums, target):
     '''
-    Given a sorted (in ascending order) integer array nums of n elements and a target value,
+    Given a sorted (in ascending order) integer array `nums` of n elements and a target value,
     find the target value in the array.
 
     Time complexity: :math:`O(\log n)`
+
     Space complexity: :math:`O(1)`
 
 
@@ -78,18 +27,16 @@ def bin_search1(nums, target):
     # End Condition: left > right
     return -1
 
-# Template 2:
-
-# An advanced way to implement Binary Search.
-# Use the element's right neighbor to determine if the condition is met and decide whether to go left or right
-# Guarantees Search Space is at least 2 in size at each step
-# Post-processing required. Loop/Recursion ends when you have 1 element left. Need to assess if the remaining element meets the condition.
 
 def bin_search2(nums, target):
     '''
     Given a sorted (in ascending order) integer array nums of n elements and a target value,
     find the target value in the array.
     The array may contain duplicates.
+
+    Time complexity: :math:`O(\log n)`
+
+    Space complexity: :math:`O(1)`
 
     :type nums: List[int]
     :type target: int
@@ -111,18 +58,16 @@ def bin_search2(nums, target):
 
     return -1
 
-# Template 3:
-
-# An alternative way to implement Binary Search
-# Use element's neighbors to determine if condition is met and decide whether to go left or right
-# Gurantees Search Space is at least 3 in size at each step
-# Post-processing required. Loop/Recursion ends when you have 2 elements left. Need to assess if the remaining elements meet the condition.
 
 def bin_search3(nums, target):
     '''
     Given a sorted (in ascending order) integer array nums of n elements and a target value,
     find the target value in the array.
     The array may contain duplicates.
+
+    Time complexity: :math:`O(\log n)`
+
+    Space complexity: :math:`O(1)`
 
     :type nums: List[int]
     :type target: int
@@ -144,39 +89,34 @@ def bin_search3(nums, target):
     return -1
 
 
+def minimizeMax(nums: list[int], p: int) -> int:
+    '''
+    You are given a 0-indexed integer array nums and an integer p.
+    Find p pairs of indices of nums such that the maximum difference amongst all the pairs is minimized.
+    Also, ensure no index appears more than once amongst the p pairs.
+    Note that for a pair of elements at the index i and j, the difference of this pair is |nums[i] - nums[j]|,
+    where |x| represents the absolute value of x.
+    Return the minimum maximum difference among all p pairs. We define the maximum of an empty set to be zero.
 
-# Binary Search on Answer
+    Time complexity: :math:`O(n \log n)`
 
-# More advanced application is solving of optimisation problems.
-# Optimisation problems are problems which ask to find the maximum or minimum for some value
-# This technique is called "binary search on answer"
-# Example:
-
-# You are given a 0-indexed integer array nums and an integer p. Find p pairs of indices of nums such that the maximum difference amongst all the pairs is minimized.
-# Also, ensure no index appears more than once amongst the p pairs.
-# Note that for a pair of elements at the index i and j, the difference of this pair is |nums[i] - nums[j]|, where |x| represents the absolute value of x.
-# Return the minimum maximum difference among all p pairs. We define the maximum of an empty set to be zero.
-
-# Solution:
-
-class Solution:
-    def minimizeMax(self, nums: list[int], p: int) -> int:
-        if not p: return 0
-        nums.sort()
-        diffs = [a-b for a,b in zip(nums[1:], nums[:-1])]
-        left, right = min(diffs), max(diffs)
-        while left <= right:
-            mid = (left+right)//2
-            cnt, j = 0, 0
-            while j < len(diffs):
-                if diffs[j] <= mid:
-                    cnt += 1
-                    j += 1
+    Space complexity: :math:`O(n)`
+    '''
+    if not p: return 0
+    nums.sort()
+    diffs = [a-b for a,b in zip(nums[1:], nums[:-1])]
+    left, right = min(diffs), max(diffs)
+    while left <= right:
+        mid = (left+right)//2
+        cnt, j = 0, 0
+        while j < len(diffs):
+            if diffs[j] <= mid:
+                cnt += 1
                 j += 1
-            if cnt >= p: right = mid - 1
-            else: left = mid + 1
+            j += 1
+        if cnt >= p: right = mid - 1
+        else: left = mid + 1
 
-        return left
+    return left
 
-sol = Solution()
-print(sol.minimizeMax([10,1,2,7,1,3], p = 2))
+print(minimizeMax([10,1,2,7,1,3], p = 2))

@@ -1,10 +1,4 @@
-# Trie (prefix tree) implementation
-# Trie is a tree-like data structure whose nodes store the letters of an alphabet.
-# By structuring the nodes in a particular way, words and strings can be retrieved from the structure by traversing down a branch path of the tree.
-# No node in the tree stores the key associated with that node; instead, its position in the tree defines the key with which it is associated.
-# All the descendants of a node have a common prefix of the string associated with that node, and the root is associated with the empty string.
-# Values are not necessarily associated with every node. Rather, values tend only to be associated with leaves, and with some inner nodes that correspond to keys of interest.
-
+print('trie')
 
 class TrieNode:
     '''
@@ -17,15 +11,19 @@ class TrieNode:
 
 class Trie:
     '''
-    Trie (prefix tree) implementation
-    Trie is a tree-like data structure whose nodes store the letters of an alphabet.
-    By structuring the nodes in a particular way, words and strings
+    Trie (prefix tree) implementation.
+    Trie is a tree-like data structure whose nodes store the letters of an alphabet
+    by structuring the nodes in a particular way, words and strings
     can be retrieved from the structure by traversing down a branch path of the tree.
+
     No node in the tree stores the key associated with that node;
     instead, its position in the tree defines the key with which it is associated.
+
     All the descendants of a node have a common prefix of the string associated with that node,
     and the root is associated with the empty string.
+
     Values are not necessarily associated with every node.
+
     Rather, values tend only to be associated with leaves, and with some inner nodes that correspond to keys of interest.
     '''
 

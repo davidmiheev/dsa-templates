@@ -1,8 +1,11 @@
+print('all_subs')
+
 def generate_subsequences(arr):
     '''
     Given an array of integers, arr, return all possible subsequences of the array.
 
     Time complexity: :math:`O(2^n)`
+
     Space complexity: :math:`O(2^n)`
 
     :type arr: List[int]

@@ -7,8 +7,15 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
+import inspect
+import sphinx_copybutton
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.append('../..')
+
+import stack
+import all_subs, bin_search, trie, bfs, dfs, dijkstra
+import dynam_prog, backtrack, union_find, fenwick, min_span_tree
+import top_sort
 
 project = 'dsa-templates'
 copyright = '2024, David Mikheev'
@@ -24,6 +31,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon',
+    'sphinx_copybutton',
     'sphinx_rtd_theme'
 ]
 
@@ -37,6 +47,23 @@ exclude_patterns = []
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
+
+add_module_names = False
+add_function_parentheses = True
+
+# Enable Google style docstrings
+napoleon_google_docstring = True
+
+# Enable NumPy style docstrings
+napoleon_numpy_docstring = True
+
+# Set to True to use Sphinx’s native docstring section style
+napoleon_use_param = True
+napoleon_use_rtype = True
+
+# Set to True to create a list of class methods in the order they appear in the source code
+napoleon_use_ivar = False
+
 
 latex_engine = 'xelatex'
 latex_elements = {

@@ -1,21 +1,22 @@
-## Union find (disjoint set) data structure
-
-# First variant with rank attribute (for optimization)):
-
 from collections import defaultdict
+
+print('Union-Find')
 
 class UnionFind:
     '''
     Union-Find data structure
+
     Union-Find data structure is a disjoint-set data structure
     that keeps track of a set of elements partitioned into a number of disjoint (non-overlapping) subsets.
 
+    Variant with rank attribute (for optimization)
 
-    :type vertices: set
     '''
     def __init__(self, vertices: set):
         '''
         Initialize the Union-Find data structure with the given set of vertices.
+
+        Time complexity: :math:`O(n)`, where n is the number of vertices.
 
         :type vertices: set
         :rtype: None
@@ -28,6 +29,7 @@ class UnionFind:
     def find(self, node: int) -> int:
         '''
         Find the group that the given node belongs to.
+
 
         :type node: int
         :rtype: int
@@ -69,14 +71,23 @@ class UnionFind:
         return self.find(node1) == self.find(node2)
 
 
-# Second variant without rank attribute (for simplicity):
+# :
 
 # UnionFind class
 class UnionFindSimple:
+    '''
+    Union-Find
+
+    Variant without rank attribute (for simplicity)
+    '''
     def __init__(self, size):
+        '''
+
+        '''
         self.root = [i for i in range(size)]
 
     def find(self, x):
+
         if x == self.root[x]: return x
         self.root[x] = self.find(self.root[x])
         return self.root[x]

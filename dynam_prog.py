@@ -1,11 +1,19 @@
 from functools import cache
 
-def top_down_memo(arr):
+print('Dynamic Programming')
+
+def kadane_recursive(arr):
     '''
-    Given an integer array nums, find the contiguous subarray (containing at least one number)
+    Given an integer array `nums`, find the contiguous subarray (containing at least one number)
     which has the largest sum and return its sum.
+
+    It is recursive version of Kadane's Algorithm.
     Example of Recursive DP (I prefer recursive DP since it's much more comfortable to me)
-    It is recursive version of Kadane's Algorithm
+
+    Time complexity: :math:`O(n)`
+
+    Space complexity: :math:`O(n)`
+
 
     :type arr: List[int]
     :rtype: int
@@ -22,13 +30,18 @@ def top_down_memo(arr):
     _, ans = dp(len(arr)-1)
     return ans
 
-print("max_subarray_sum (recursive_dp):", top_down_memo([1, 2, 3, -7, 5])) # 6
+print("max_subarray_sum (recursive_dp):", kadane_recursive([1, 2, 3, -7, 5])) # 6
 
 def max_subarray_sum(arr):
     '''
     Given an integer array nums, find the contiguous subarray (containing at least one number)
     which has the largest sum and return its sum.
+
     Classic Kadane's Algorithm
+
+    Time complexity: :math:`O(n)`
+
+    Space complexity: :math:`O(1)`
 
     :type arr: List[int]
     :rtype: int
@@ -48,6 +61,10 @@ def max_subarray_product(arr):
     '''
     Given an integer array nums, find the contiguous subarray (containing at least one number)
     which has the largest product and return its product.
+
+    Time complexity: :math:`O(n)`
+
+    Space complexity: :math:`O(1)`
 
     :type arr: List[int]
     :rtype: int
@@ -71,6 +88,10 @@ def max_subarray_sum_circular(arr):
     Given a circular integer array nums of length n,
     return the maximum possible sum of a non-empty subarray of nums.
     A circular array means the end of the array connects to the beginning of the array.
+
+    Time complexity: :math:`O(n)`
+
+    Space complexity: :math:`O(1)`
 
     :type arr: List[int]
     :rtype: int
@@ -103,16 +124,16 @@ print("max_subarray_sum_circular:", max_subarray_sum_circular([1, -2, 3, -2])) #
 
 
 #####################
-# Range Sum Queries
-#
-# Given an array of n numbers, we need to efficiently answer q queries of the form:
-#
-# What is the sum of elements from index l to r (with 0-based indexing)?
+# Range Sum Queries #
+#####################
 def range_sum_queries(arr):
     '''
     Given an array of n numbers, we need to efficiently answer q queries of the form:
         What is the sum of elements from index l to r (with 0-based indexing)?
 
+    Time complexity: :math:`O(n)`
+
+    Space complexity: :math:`O(n)`
 
     :type arr: List[int]
     :rtype: Callable[[int, int], int]
@@ -134,6 +155,10 @@ def range_min_queries(arr):
     '''
     Given an array of n numbers, we need to efficiently answer q queries of the form:
         What is the minimum/maximum element from index l to r (with 0-based indexing)?
+
+    Time complexity: :math:`O(n^2)`
+
+    Space complexity: :math:`O(n^2)`
 
     :type arr: List[int]
     :rtype: Tuple[Callable[[List[int]], List[int]], Callable[[List[int], int, int], int]]
@@ -162,6 +187,10 @@ def range_gcd_queries(arr):
     Given an array of n numbers, we need to efficiently answer q queries of the form:
         What is the greatest common divisor of elements from index l to r (with 0-based indexing)?
 
+    Time complexity: :math:`O(n^2)`
+
+    Space complexity: :math:`O(n^2)`
+
     :type arr: List[int]
     :rtype: Tuple[Callable[[List[int]], List[int]], Callable[[List[int], int, int], int]]
     '''
@@ -183,40 +212,3 @@ def range_gcd_queries(arr):
 
 dp = range_gcd_queries([2, 4, 6, 8, 10])[0]
 print("range_gcd_queries:", range_gcd_queries([2, 4, 6, 8, 10])[1](dp([2, 4, 6, 8, 10]), 1, 3)) # 2
-
-# What is the bitwise AND/OR/XOR of elements from index l to r (with 0-based indexing)?
-def range_and_queries(arr):
-
-    def build(arr):
-        n = len(arr)
-        dp = [[0] * n for _ in range(n)]
-        for i in range(n):
-            dp[i][i] = arr[i]
-        for i in range(n):
-            for j in range(i + 1, n):
-                dp[i][j] = dp[i][j - 1] & arr[j] # change to | for OR queries, ^ for XOR queries
-        return dp
-
-    def query(dp, l, r):
-        return dp[l][r]
-
-    return build, query
-
-# What is the number of elements from index l to r (with 0-based indexing) that are greater than or equal to x?
-
-def range_count_queries(arr, x):
-
-    def build(arr):
-        n = len(arr)
-        dp = [[0] * n for _ in range(n)]
-        for i in range(n):
-            dp[i][i] = 1 if arr[i] >= x else 0
-        for i in range(n):
-            for j in range(i + 1, n):
-                dp[i][j] = dp[i][j - 1] + (1 if arr[j] >= x else 0)
-        return dp
-
-    def query(dp, l, r):
-        return dp[l][r]
-
-    return build, query
