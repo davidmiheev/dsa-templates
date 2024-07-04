@@ -1,6 +1,6 @@
-print('bin_search')
+print('bisect')
 
-def bin_search1(nums, target):
+def bisect_1(nums, target):
     '''
     Given a sorted (in ascending order) integer array `nums` of n elements and a target value,
     find the target value in the array.
@@ -28,7 +28,7 @@ def bin_search1(nums, target):
     return -1
 
 
-def bin_search2(nums, target):
+def bisect_2(nums, target):
     '''
     Given a sorted (in ascending order) integer array nums of n elements and a target value,
     find the target value in the array.
@@ -59,7 +59,7 @@ def bin_search2(nums, target):
     return -1
 
 
-def bin_search3(nums, target):
+def bisect_3(nums, target):
     '''
     Given a sorted (in ascending order) integer array nums of n elements and a target value,
     find the target value in the array.

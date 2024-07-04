@@ -1,7 +1,7 @@
 from collections import defaultdict
 from heapq import heappop, heappush, heapify
 from typing import List
-from union_find import UnionFind
+from union_find import UnionFind_B as UnionFind
 
 print('min_span_tree')
 
@@ -19,7 +19,7 @@ def minimumCost(n: int, connections: List[List[int]]) -> int:
     :type connections: List[List[int]]
     :rtype: int
     '''
-    uf = UnionFind(set(range(1, n+1)))
+    uf = UnionFind(n)
     pq = []
     for x, y, cost in connections:
         pq.append((cost, x, y))
@@ -29,7 +29,7 @@ def minimumCost(n: int, connections: List[List[int]]) -> int:
     while pq and n > 1:
         cost, x, y = heappop(pq)
         if not uf.are_connected(x, y):
-            uf.join(x, y)
+            uf.union(x, y)
             n -= 1
             ans += cost
 

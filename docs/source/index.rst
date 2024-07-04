@@ -31,6 +31,7 @@ Indices and tables
    binary_search
    binary_tree
    binary_search_tree
+   tree
    graph
    heap
    trie

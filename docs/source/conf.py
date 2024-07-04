@@ -13,7 +13,7 @@ import sphinx_copybutton
 sys.path.append('../..')
 
 import stack
-import all_subs, bin_search, trie, bfs, dfs, dijkstra
+import all_subs, binary_search, trie, bfs, dfs, dijkstra
 import dynam_prog, backtrack, union_find, fenwick, min_span_tree
 import top_sort
 
