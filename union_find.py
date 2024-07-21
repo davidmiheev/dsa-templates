@@ -1,95 +1,16 @@
+from typing import List
 from collections import defaultdict
 
 print('Union-Find')
 
-class UnionFind_A:
-    '''
-    Union-Find data structure
-
-    Union-Find data structure is a disjoint-set data structure
-    that keeps track of a set of elements partitioned into a number of disjoint (non-overlapping) subsets.
-
-    Variant with rank attribute (for optimization)
-
-    '''
-    def __init__(self, vertices: set):
-        '''
-        Initialize the Union-Find data structure with the given set of vertices.
-
-        Time complexity: :math:`O(n)`, where n is the number of vertices.
-
-        Space complexity: :math:`O(n)`, where n is the number of vertices.
-
-        :type vertices: set
-        :rtype: None
-        '''
-        self.group = defaultdict(int)
-        self.rank = defaultdict(int)
-        for i in vertices:
-            self.group[i] = i
-
-    def find(self, node: int) -> int:
-        '''
-        Find the group that the given node belongs to.
-
-        Time complexity: :math:`O(a(n))`, where n is the number of vertices.
-
-        Space complexity: :math:`O(1)`
-
-        :type node: int
-        :rtype: int
-        '''
-        if self.group[node] != node:
-            self.group[node] = self.find(self.group[node])
-        return self.group[node]
-
-    def join(self, node1: int, node2: int):
-        '''
-        Join the groups that the given nodes belong to.
-
-        Time complexity: :math:`O(a(n))`, where n is the number of vertices.
-
-        Space complexity: :math:`O(1)`
-
-        :type node1: int
-        :type node2: int
-        :rtype: None
-        '''
-        group1 = self.find(node1)
-        group2 = self.find(node2)
-
-        # node1 and node2 already belong to same group.
-        if group1 == group2:
-            return
-
-        if self.rank[group1] > self.rank[group2]:
-            self.group[group2] = group1
-        elif self.rank[group1] < self.rank[group2]:
-            self.group[group1] = group2
-        else:
-            self.group[group1] = group2
-            self.rank[group2] += 1
-
-    def are_connected(self, node1: int, node2: int) -> bool:
-        '''
-        Check if the given nodes belong to the same group.
-
-        :type node1: int
-        :type node2: int
-        :rtype: bool
-        '''
-        return self.find(node1) == self.find(node2)
-
-
-
-class UnionFind_B:
+class UnionFind:
     '''
     Union-Find data structure
 
     Variant with size of component attribute (for optimization)
     and number of components attribute
     '''
-    def __init__(self, n: int):
+    def __init__(self, n: int, vertices = None):
         '''
         Initialize the Union-Find data structure with the given number of vertices.
 
@@ -97,9 +18,14 @@ class UnionFind_B:
 
         Space complexity: :math:`O(n)`, where n is the number of vertices.
         '''
-        self.parent = list(range(n + 1))
-        self.size = [1] * (n + 1)
-        self.components = n
+        if vertices:
+            self.parent = {v: v for v in vertices}
+            self.size = {v: 1 for v in vertices}
+            self.components = len(vertices)
+        else:
+            self.parent = list(range(n + 1))
+            self.size = [1] * (n + 1)
+            self.components = n
 
     def find(self, x: int) -> int:
         '''
@@ -118,7 +44,7 @@ class UnionFind_B:
         '''
         Union the components that the given nodes belong to.
 
-        Time complexity: :math:`O(a(n))`
+        Time complexity: :math:`O(a(n))`, where a(n) is the inverse Ackermann function (very slow growing function).
 
         Space complexity: :math:`O(1)`
         '''
@@ -138,6 +64,13 @@ class UnionFind_B:
         return 1
 
     def are_connected(self, x: int, y: int) -> bool:
+        '''
+        Check if the given nodes are connected
+
+        Time complexity: :math:`O(a(n))`, where a(n) is the inverse Ackermann function (very slow growing function).
+
+        Space complexity: :math:`O(1)`
+        '''
         return self.find(x) == self.find(y)
 
 
@@ -171,8 +104,8 @@ class UnionFindSimple:
 
 
 # Example usage:
-vertices = {1, 2, 3, 4, 5, 6, 7}
-uf = UnionFind_A(vertices)
+vertices = [1, 2, 3, 4, 5, 6, 7]
+uf = UnionFind(7, vertices)
 graph = [(1, 2), (2, 3), (1, 3), (1, 4), (2, 5), (6, 7)]
 connected_components = len(vertices)
 cycles = 0
@@ -181,6 +114,6 @@ for x, y in graph:
         cycles += 1
     else:
         connected_components -= 1
-        uf.join(x, y)
+        uf.union(x, y)
 
 print(f'N of connected components: {connected_components}, N of cycles: {cycles}')

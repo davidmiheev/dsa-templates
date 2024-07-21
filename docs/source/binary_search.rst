@@ -98,4 +98,4 @@ Template for optimisation problems:
        return left
 
 
-.. autofunction:: bin_search.minimizeMax
+.. autofunction:: binary_search.minimizeMax
