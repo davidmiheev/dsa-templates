@@ -1,5 +1,5 @@
-Backtracking
-=============
+Examples of One-liners
+======================
 
 .. autofunction:: one_line.prefix_sums
 
