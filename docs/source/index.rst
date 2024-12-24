@@ -50,3 +50,4 @@ Indices and tables
    knapsack
    divide_and_conquer
    sorting
+   one_line
