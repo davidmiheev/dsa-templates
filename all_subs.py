@@ -6,13 +6,10 @@ def generate_subsequences(arr):
 
     Time complexity: :math:`O(2^n)`
 
-    Space complexity: :math:`O(2^n)`
-
     :type arr: List[int]
     :rtype: List[List[int]]
     '''
     n = len(arr)
-    result = []
 
     for i in range(2**n):
         subseq = []
@@ -20,9 +17,8 @@ def generate_subsequences(arr):
             if i & (1 << j):
                 subseq.append(arr[j])
 
-        result.append(subseq)
-
-    return result
+        yield subseq
 
 arr = [1, 2, 3]
-print(generate_subsequences(arr))
+for sub in generate_subsequences(arr):
+    print(sub)
