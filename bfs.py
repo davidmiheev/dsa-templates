@@ -2,8 +2,10 @@ from collections import defaultdict
 from collections import deque
 
 print('BFS')
+
 edges = [[1,2], [2,3], [5,2], [1, 5]]
 graph = defaultdict(list)
+
 for a, b in edges:
     graph[a] += [b]
     graph[b] += [a] # this line for undirected graphs only
@@ -16,13 +18,21 @@ def bfs(start, target):
     '''
     seen = set()
     q = deque([(start, 0)])
+
     while q:
+
         vert, dist = q.popleft()
         seen.add(vert)
-        if vert == target: return dist
+
+        if vert == target: 
+            return dist
+        
         for adj in graph[vert]:
-            if adj in seen: continue
-            q.append((adj, dist+1))
+
+            if adj in seen: 
+                continue
+
+            q.append((adj, dist + 1))
 
     return -1
 
@@ -31,8 +41,8 @@ print(bfs(1, 5), bfs(3, 5))
 # If you use BFS for search on matrices, you need modification:
 
 
-labirint = [[0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 1, 0], [0, 0, 0, 1, 0]]
-m, n = len(labirint), len(labirint[0])
+walls = [[0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 1, 0], [0, 0, 0, 1, 0]]
+m, n = len(walls), len(walls[0])
 dirs = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 start = (0, 0)
 def bfs_matrix(start):
@@ -49,20 +59,23 @@ def bfs_matrix(start):
     '''
     seen = set([start])
     q = deque([(start[0], start[1], 0)])
-    j = 0
+
     while q:
-        j += 1
+
         r, c, dist = q.popleft()
-        # print(j, (r, c))
-        # seen.add((r, c))
-        if (r, c) == (m-1, n-1): return dist
+        
+        if (r, c) == (m - 1, n - 1):
+            return dist
+        
         for dr, dc in dirs:
-            if r+dr >= m or r+dr < 0 or c+dc >= n or c+dc < 0: continue
-            if (r+dr, c+dc) in seen or labirint[r+dr][c+dc]: continue
-            q.append((r+dr, c+dc, dist+1))
-            seen.add((r+dr, c+dc)) # to escape repetitions in queue in matrix case
+
+            if r + dr >= m or r + dr < 0 or c + dc >= n or c + dc < 0: 
+                continue
+
+            if (r + dr, c + dc) not in seen and not walls[r + dr][c + dc]:
+                q.append((r+dr, c+dc, dist+1))
+                seen.add((r+dr, c+dc)) # to escape repetitions in queue in matrix case
 
     return -1
 
-# print(seen)
 print(bfs_matrix(start))

@@ -50,12 +50,12 @@ def maxSlidingWindow(nums: List[int], k: int) -> List[int]:
         while deq and nums[i] > nums[deq[-1]]:
             deq.pop()
 
-        if deq and i-k+1 > deq[0]:
+        if deq and i - k + 1 > deq[0]:
             deq.popleft()
 
         deq.append(i)
 
-        if i >= k-1:
+        if i >= k - 1:
             ans.append(nums[deq[0]])
 
     return ans

@@ -21,7 +21,8 @@ def is_valid(s: str) -> bool:
             stack.pop()
         elif ch == '}' and stack and stack[-1] == '{':
             stack.pop()
-        else: stack.append(ch)
+        else:
+            stack.append(ch)
 
     return not stack
 

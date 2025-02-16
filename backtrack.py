@@ -16,7 +16,7 @@ def permutations(nums: List[int]) -> List[List[int]]:
             res.append(path)
             return
         for i in range(len(nums)):
-            backtrack(path + [nums[i]], nums[:i] + nums[i+1:], res)
+            backtrack(path + [nums[i]], nums[:i] + nums[i + 1:], res)
 
     res = []
     backtrack([], nums, res)
@@ -91,12 +91,12 @@ def nQueens(n: int) -> List[List[str]]:
     '''
     arrangement = []
     ans = []
-    template = [['.']*n for _ in range(n)]
+    template = [['.'] * n for _ in range(n)]
     def backtrack(j):
         nonlocal template
         if j in arrangement: return
         for r, c in enumerate(arrangement):
-            if abs(j-c) == len(arrangement) - r:
+            if abs(j - c) == len(arrangement) - r:
                 return
 
         arrangement.append(j)
@@ -106,7 +106,7 @@ def nQueens(n: int) -> List[List[str]]:
                 template[r] = ''.join(template[r])
 
             ans.append(template)
-            template = [['.']*n for _ in range(n)]
+            template = [['.'] * n for _ in range(n)]
             arrangement.pop()
             return
 

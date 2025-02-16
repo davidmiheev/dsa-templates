@@ -19,9 +19,12 @@ def top_sort(graph):
     order = []
     def dfs(vert):
         nonlocal order
+
         seen.add(vert)
         current_path.add(vert)
+
         for adj in graph[vert]:
+            
             if adj not in seen:
                 dfs(adj)
             elif adj in current_path: # check if graph has a cycle
@@ -34,7 +37,8 @@ def top_sort(graph):
 
 
     for vert in graph:
-        if vert in seen: continue
+        if vert in seen: 
+            continue
         dfs(vert)
 
     return order[::-1]

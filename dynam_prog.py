@@ -21,7 +21,8 @@ def kadane_recursive(arr):
 
     @cache
     def dp(i):
-        if i == 0: return arr[0], arr[0]
+        if i == 0: 
+            return arr[0], arr[0]
         max_ending_here, max_so_far = dp(i-1)
         max_ending_here = max(arr[i], max_ending_here + arr[i])
         max_so_far = max(max_so_far, max_ending_here)

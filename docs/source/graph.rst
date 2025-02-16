@@ -10,6 +10,7 @@ Construction of a graph from a list of edges
 
     edges = [[1,2], [2,3], [5,2], [1, 5]]
     graph = defaultdict(list)
+    
     for a, b in edges:
         graph[a] += [b]
         graph[b] += [a] # this line for undirected graphs only

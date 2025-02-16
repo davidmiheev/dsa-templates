@@ -20,20 +20,22 @@ def minimumCost(n: int, connections: List[List[int]]) -> int:
     :rtype: int
     '''
     uf = UnionFind(n)
+    
     pq = []
     for x, y, cost in connections:
         pq.append((cost, x, y))
 
     heapify(pq)
-    ans = 0
+
+    min_cost = 0
     while pq and n > 1:
         cost, x, y = heappop(pq)
         if not uf.are_connected(x, y):
             uf.union(x, y)
             n -= 1
-            ans += cost
+            min_cost += cost
 
-    return ans if n == 1 else -1
+    return min_cost if n == 1 else -1
 
 connections = [[1,2,5],[1,3,6],[2,3,1]]
 n = 3

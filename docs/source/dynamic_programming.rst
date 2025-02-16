@@ -1,5 +1,5 @@
 Dynamic Programming
-==================
+===================
 
 .. automodule:: dynam_prog
     :members:

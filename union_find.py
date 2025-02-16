@@ -88,8 +88,8 @@ class UnionFindSimple:
         self.root = [i for i in range(size)]
 
     def find(self, x):
-
-        if x == self.root[x]: return x
+        if x == self.root[x]: 
+            return x
         self.root[x] = self.find(self.root[x])
         return self.root[x]
 

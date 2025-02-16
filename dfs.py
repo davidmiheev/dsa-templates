@@ -21,24 +21,35 @@ def numEnclaves(grid: List[List[int]]) -> int:
     m, n = len(grid), len(grid[0])
     dirs = [(1,0), (0,1), (-1,0), (0,-1)]
     visited = set()
+
     def dfs(cell):
-        if cell in visited: return False
-        i, j = cell
-        if not grid[i][j]: return False
-        visited.add(cell)
-        if i == m-1 or j == n-1 or not i or not j:
+        if cell in visited:
             return False
+        
+        i, j = cell
+
+        if not grid[i][j]:
+            return False
+        
+        visited.add(cell)
+
+        if i == m - 1 or j == n - 1 or not i or not j:
+            return False
+
         ret = True
+
         for di, dj in dirs:
-            if (i+di, j+dj) in visited: continue
-            if not grid[i+di][j+dj]: continue
-            ret &= dfs((i+di, j+dj))
+            if (i + di, j + dj) in visited:
+                continue
+            if not grid[i + di][j + dj]:
+                continue
+            ret &= dfs((i + di, j + dj))
 
         return ret
 
     ret = 0
-    for i in range(1, m-1):
-        for j in range(1, n-1):
+    for i in range(1, m - 1):
+        for j in range(1, n - 1):
             temp = len(visited)
             if dfs((i, j)):
                 ret += len(visited) - temp
@@ -69,13 +80,15 @@ def findCircleNum(isConnected: List[List[int]]) -> int:
     '''
     n = len(isConnected)
     seen = set()
+    
     @cache
     def dfs(i):
         seen.add(i)
         for j in range(n):
-            if not isConnected[i][j]: continue
-            if j in seen: continue
-            dfs(j)
+            if not isConnected[i][j]:
+                continue
+            if j not in seen:
+                dfs(j)
 
     n_provinces = 0
     for i in range(n):

@@ -19,7 +19,7 @@ For example, the breadth-first search algorithm uses a queue to traverse a graph
 Here are collected problems that can be solved using the queue (deque) data structure alongwith implementation of queue.
 
 Queue Implementation using Array
--------------------------------
+--------------------------------
 .. autoclass:: _queue_.Queue
     :members:
 
