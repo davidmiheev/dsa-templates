@@ -10,14 +10,13 @@ Construction of a graph from a list of edges
 
     edges = [[1,2], [2,3], [5,2], [1, 5]]
     graph = defaultdict(list)
-    
+
     for a, b in edges:
         graph[a] += [b]
         graph[b] += [a] # this line for undirected graphs only
 
 BFS
 ---
-
 Breadth-first search is a particular search on a graph.
 Breadth-first search is useful when you need to find the length of a shortest path from one vertex to another (in unweighted graph).
 Also, with BFS you can traverse a graph
@@ -25,11 +24,11 @@ Breadth-first search implementation is non-recursive.
 
 .. autofunction:: bfs.bfs
 
-Labirint problem:
-For instance, you have a matrix (m x n) with zeros and ones,
-you can move from the current cell to one of four adjacent cells whenever that adjacent cell is filled by zero
-initial position is (0, 0), find the length of a shortest path to the right-bottom cell (m-1, n-1),
-if you can't reach the right-bottom cell, return -1
+Maze problem:
+    For instance, you have a matrix `(m x n)` with zeros and ones,
+    you can move from the current cell to one of four adjacent cells whenever that adjacent cell is filled by zero
+    initial position is `(0, 0)`, find the length of a shortest path to the right-bottom cell `(m - 1, n - 1)`,
+    if you can't reach the right-bottom cell, return `-1`
 
 0 1 0 0 0
 

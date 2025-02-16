@@ -46,7 +46,7 @@ Basic Template of binary search without use of built-in library:
 Binare search: Version 1
 ------------------------
 
-Most basic and elementary form of Binary Search
+Most basic and elementary form of Binary Search.
 Search Condition can be determined without comparing to the element's neighbors (or use specific elements around it).
 No post-processing required because at each step, you are checking to see if the element has been found.
 If you reach the end, then you know the element is not found
@@ -77,7 +77,7 @@ Binary Search on Answer
 
 More advanced application is solving of optimisation problems.
 Optimisation problems are problems which ask to find the maximum or minimum for some value
-This technique is called "binary search on answer"
+This technique is called **"binary search on answer"**
 
 Template for optimisation problems:
 
@@ -90,7 +90,7 @@ Template for optimisation problems:
            return val >= p
 
        while left <= right:
-           mid = (left+right)//2
+           mid = (left + right) // 2
            if feasible(mid):
                right = mid - 1
            else: left = mid + 1

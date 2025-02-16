@@ -18,7 +18,7 @@ import dynam_prog, backtrack, union_find, fenwick, min_span_tree
 import top_sort
 
 project = 'dsa-templates'
-copyright = '2024, David Mikheev'
+copyright = '2025, David Mikheev'
 author = 'David Mikheev'
 release = '0.1'
 
