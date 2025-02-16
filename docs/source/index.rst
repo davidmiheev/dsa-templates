@@ -5,11 +5,11 @@
 
 Welcome to DSA Templates!
 =========================================
-Collection of data structures and algos in Python 3 and Rust
+Collection of data structures and algos implementations in Python 3 and Rust
 
 .. note::
-   You can see code of all functions in this site by clicking on `[source]` as usual in tech docs. 
-   Maybe it is not the best solution for showcase of implementation of variuos algos data structures, but it works for me.
+   You can see code of all functions on this site by clicking on `[source]` as usual in tech docs. 
+   Maybe it is not the best approach to show implementations of algos and data structures and I should add more explicit code snippets.
    Hope this website will be useful for your journey in the world of algorithms and data structures.
 
 .. note::
