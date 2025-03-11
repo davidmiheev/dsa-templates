@@ -6,7 +6,7 @@ class TrieNode:
     '''
 
     def __init__(self, isValid=False, val=''):
-        self.children = [None for _ in range(26)]
+        self.children = {}
         self.valid = isValid
 
 class Trie:
@@ -45,9 +45,9 @@ class Trie:
         '''
         cur = self.root
         for ch in word:
-            if cur.children[ord(ch)-97] is None:
-                cur.children[ord(ch)-97] = TrieNode()
-            cur = cur.children[ord(ch)-97]
+            if ch not in cur.children:
+                cur.children[ch] = TrieNode()
+            cur = cur.children[ch]
 
         cur.valid = True
 
@@ -63,9 +63,9 @@ class Trie:
         '''
         cur = self.root
         for ch in word:
-            if cur.children[ord(ch)-97] is None:
+            if ch not in cur.children:
                 return False
-            cur = cur.children[ord(ch)-97]
+            cur = cur.children[ch]
 
         return cur.valid
 
@@ -81,9 +81,9 @@ class Trie:
         '''
         cur = self.root
         for ch in prefix:
-            if cur.children[ord(ch)-97] is None:
+            if ch not in cur.children:
                 return False
-            cur = cur.children[ord(ch)-97]
+            cur = cur.children[ch]
 
         return True
 
