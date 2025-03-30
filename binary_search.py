@@ -94,6 +94,7 @@ def bisect_3(nums, target):
 
 def minimizeMax(nums: list[int], p: int) -> int:
     '''
+    Example problem: https://leetcode.com/problems/minimize-the-maximum-difference-of-pairs/
     You are given a 0-indexed integer array nums and an integer `p`.
     Find p pairs of indices of nums such that the maximum difference amongst all the pairs is minimized.
     Also, ensure no index appears more than once amongst the `p` pairs.
@@ -105,7 +106,8 @@ def minimizeMax(nums: list[int], p: int) -> int:
 
     Space complexity: :math:`O(n)`
     '''
-    if not p: return 0
+    if not p:
+        return 0
     nums.sort()
     diffs = [a - b for a, b in zip(nums[1:], nums[:-1])]
     left, right = min(diffs), max(diffs)

@@ -16,6 +16,7 @@ import stack, _queue_
 import all_subs, binary_search, trie, bfs, dfs, dijkstra
 import dynam_prog, backtrack, union_find, fenwick, min_span_tree
 import top_sort
+import tree
 
 project = 'dsa-templates'
 copyright = '2025, David Mikheev'

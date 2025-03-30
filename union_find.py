@@ -19,11 +19,11 @@ class UnionFind:
         Space complexity: :math:`O(n)`, where n is the number of vertices.
         '''
         if vertices:
-            self.parent = {v: v for v in vertices}
+            self.root = {v: v for v in vertices}
             self.size = {v: 1 for v in vertices}
             self.components = len(vertices)
         else:
-            self.parent = list(range(n + 1))
+            self.root = list(range(n + 1))
             self.size = [1] * (n + 1)
             self.components = n
 
@@ -35,10 +35,10 @@ class UnionFind:
 
         Space complexity: :math:`O(1)`
         '''
-        if self.parent[x] == x:
+        if self.root[x] == x:
             return x
-        self.parent[x] = self.find(self.parent[x])
-        return self.parent[x]
+        self.root[x] = self.find(self.root[x])
+        return self.root[x]
 
     def union(self, x: int, y: int) -> int:
         '''
@@ -55,10 +55,10 @@ class UnionFind:
 
         if self.size[x] > self.size[y]:
             self.size[x] += self.size[y]
-            self.parent[y] = x
+            self.root[y] = x
         else:
             self.size[y] += self.size[x]
-            self.parent[x] = y
+            self.root[x] = y
 
         self.components -= 1
         return 1
@@ -82,9 +82,6 @@ class UnionFindSimple:
     Variant without rank attribute (for simplicity)
     '''
     def __init__(self, size):
-        '''
-
-        '''
         self.root = [i for i in range(size)]
 
     def find(self, x):
