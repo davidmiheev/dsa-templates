@@ -51,7 +51,7 @@ Search Condition can be determined without comparing to the element's neighbors 
 No post-processing required because at each step, you are checking to see if the element has been found.
 If you reach the end, then you know the element is not found
 
-.. autofunction:: binary_search.bisect_1
+.. autofunction:: binary_search.binary_search.bisect_1
 
 Binary search: Version 2
 ------------------------
@@ -98,4 +98,4 @@ Template for optimisation problems:
        return left
 
 
-.. autofunction:: binary_search.minimizeMax
+.. autofunction:: binary_search.binary_search.minimizeMax

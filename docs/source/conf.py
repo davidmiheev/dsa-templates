@@ -11,6 +11,7 @@ import inspect
 import sphinx_copybutton
 
 sys.path.append('../..')
+sys.path.insert(0, os.path.abspath('..'))
 
 import stack, _queue_
 import all_subs, binary_search, trie, bfs, dfs, dijkstra

@@ -28,10 +28,10 @@ Here is a template for backtracking approach:
         return ans
 
 
-.. autofunction:: backtrack.permutations
+.. autofunction:: backtrack.backtrack.permutations
 
-.. autofunction:: backtrack.combinationSum
+.. autofunction:: backtrack.backtrack.combinationSum
 
-.. autofunction:: backtrack.nCastles
+.. autofunction:: backtrack.backtrack.nCastles
 
-.. autofunction:: backtrack.nQueens
+.. autofunction:: backtrack.backtrack.nQueens

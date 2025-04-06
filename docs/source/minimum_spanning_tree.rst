@@ -8,7 +8,7 @@ without any cycles and with the minimum possible total edge weight.
 Kruskal's Algorithm
 -------------------
 
-.. autofunction:: min_span_tree.minimumCost
+.. autofunction:: min_span_tree.min_span_tree.minimumCost
 
 Prim's Algorithm
 ----------------

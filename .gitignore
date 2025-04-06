@@ -1,0 +1,7 @@
+__pycache__
+*.lock
+build/
+dist/
+*.egg-info/
+*.egg
+*.sh

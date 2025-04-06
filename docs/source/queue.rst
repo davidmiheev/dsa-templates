@@ -20,9 +20,9 @@ Here are collected problems that can be solved using the queue (deque) data stru
 
 Queue Implementation using Array
 --------------------------------
-.. autoclass:: _queue_.Queue
+.. autoclass:: _queue_._queue_.Queue
     :members:
 
 Max Sliding Window
 ------------------
-.. autofunction:: _queue_.maxSlidingWindow
+.. autofunction:: _queue_._queue_.maxSlidingWindow

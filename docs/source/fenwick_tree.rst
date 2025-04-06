@@ -19,7 +19,7 @@ The range of elements that a node is responsible for is determined by the least 
 
 For example, if the index of a node is 6, then the range of elements that the node is responsible for is [5, 6].
 
-.. automodule:: fenwick
+.. automodule:: fenwick.fenwick
     :members:
     :undoc-members:
     :show-inheritance:

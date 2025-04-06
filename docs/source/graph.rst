@@ -22,7 +22,7 @@ Breadth-first search is useful when you need to find the length of a shortest pa
 Also, with BFS you can traverse a graph
 Breadth-first search implementation is non-recursive.
 
-.. autofunction:: bfs.bfs
+.. autofunction:: bfs.bfs.bfs
 
 Maze problem:
     For instance, you have a matrix `(m x n)` with zeros and ones,
@@ -40,7 +40,7 @@ Maze problem:
 
 answer: 13
 
-.. autofunction:: bfs.bfs_matrix
+.. autofunction:: bfs.bfs.bfs_matrix
 
 
 
@@ -67,7 +67,7 @@ Applications:
 
     * Solving puzzles with only one solution, such as mazes
 
-.. automodule:: dfs
+.. automodule:: dfs.dfs
     :members:
     :undoc-members:
     :show-inheritance:
@@ -75,7 +75,7 @@ Applications:
 Dijkstra
 --------
 
-.. automodule:: dijkstra
+.. automodule:: dijkstra.dijkstra
     :members:
     :undoc-members:
     :show-inheritance:

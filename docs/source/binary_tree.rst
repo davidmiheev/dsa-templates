@@ -4,7 +4,7 @@ A binary tree is a tree data structure in which each node has at most two childr
 The topmost node in a binary tree is called the root. 
 Binary trees are widely used in computer science for various applications, including searching and sorting algorithms.
 
-.. automodule:: tree
+.. automodule:: tree.tree
     :members:
     :undoc-members:
     :show-inheritance:

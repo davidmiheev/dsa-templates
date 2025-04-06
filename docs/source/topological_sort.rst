@@ -25,7 +25,7 @@ Topological sort can be used to order the compilation tasks for a program
 
 Topological sort can be used to schedule tasks in a multi-core processor
 
-.. automodule:: top_sort
+.. automodule:: top_sort.top_sort
     :members:
     :undoc-members:
     :show-inheritance:
