@@ -60,4 +60,5 @@ Indices and tables
    knapsack
    divide_and_conquer
    sorting
+   multiset
    one_line
