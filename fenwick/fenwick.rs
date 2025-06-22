@@ -4,7 +4,7 @@ use std::ops::{AddAssign, Sub};
 ///
 /// Fenwick Tree is a data structure that can efficiently update elements
 /// and calculate prefix sums in a table of numbers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct FenwickTree<T> {
     size: usize,
     tree: Vec<T>,
@@ -16,7 +16,7 @@ where
 {
     pub fn new(nums: &[T]) -> Self {
         let size = nums.len();
-        let mut tree = vec![T::default(); size + 1];
+        let tree = vec![T::default(); size + 1];
 
         let mut ft = Self { size, tree };
 

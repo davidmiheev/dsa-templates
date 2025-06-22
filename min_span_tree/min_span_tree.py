@@ -1,7 +1,7 @@
 from collections import defaultdict
 from heapq import heappop, heappush, heapify
 from typing import List
-from union_find import UnionFind
+from union_find.union_find import UnionFind
 
 print('min_span_tree')
 

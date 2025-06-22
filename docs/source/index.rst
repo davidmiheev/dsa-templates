@@ -50,6 +50,7 @@ Indices and tables
    union_find
    minimum_spanning_tree
    fenwick_tree
+   segment_tree
    interval_tree
    suffix_array
    suffix_tree
