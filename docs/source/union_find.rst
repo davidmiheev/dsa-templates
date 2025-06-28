@@ -6,6 +6,7 @@ It provides operations to add new sets, merge existing sets, and find the set to
 
 Rust Implementation
 -------------------
+
 .. code-block:: rust
 
     struct UnionFind<F> 
