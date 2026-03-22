@@ -80,3 +80,13 @@ Rust Implementation
             self.tree[node] = (self.merge)(self.tree[2 * node + 1], self.tree[2 * node + 2]);
         }
     }
+
+    fn main() {
+        let arr = vec![1, 3, 5, 7, 9, 11];
+
+        let mut seg_tree = SegmentTree::new(&arr, 0, |a, b| a + b);
+        println!("Sum of range [1, 3]: {}", seg_tree.query(1, 3));
+
+        seg_tree.update(2, 6);
+        println!("Sum of range [1, 3] after update: {}", seg_tree.query(1, 3));
+    }

@@ -49,6 +49,12 @@ exclude_patterns = []
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
+html_logo = '_static/logo.png'
+html_theme_options = {
+    'logo': {
+        'image': '_static/logo.png',
+    },
+}
 
 add_module_names = False
 add_function_parentheses = True

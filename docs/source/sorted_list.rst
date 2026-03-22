@@ -1,0 +1,185 @@
+Sorted List
+============
+
+A treap-based sorted list data structure.
+
+Supports:
+- O(log n) insert, remove, bisect_left, bisect_right, get
+- O(1) len, is_empty
+
+Uses a flat array representation (indices instead of boxed nodes) with a free stack for memory reuse.
+
+.. code-block:: rust
+
+    use std::cmp::Ordering;
+
+    #[derive(Debug)]
+    struct Node {
+        key: i64,
+        priority: u32,
+        left: usize,
+        right: usize,
+        size: usize,
+    }
+
+    impl Node {
+        fn new(key: i64, seed: &mut u32) -> Self {
+            *seed ^= *seed << 13;
+            *seed ^= *seed >> 17;
+            *seed ^= *seed << 5;
+            Self {
+                key,
+                priority: *seed,
+                left: 0,
+                right: 0,
+                size: 1,
+            }
+        }
+
+        fn update(idx: usize, nodes: &mut [Node]) {
+            if idx == 0 { return; }
+            let l = nodes[idx - 1].left;
+            let r = nodes[idx - 1].right;
+            let l_size = if l == 0 { 0 } else { nodes[l - 1].size };
+            let r_size = if r == 0 { 0 } else { nodes[r - 1].size };
+            nodes[idx - 1].size = 1 + l_size + r_size;
+        }
+    }
+
+    pub struct SortedList {
+        nodes: Vec<Node>,
+        root: usize,
+        seed: u32,
+        free_stack: Vec<usize>,
+    }
+
+    impl SortedList {
+        pub fn new() -> Self {
+            Self {
+                nodes: Vec::with_capacity(1024 * 8),
+                root: 0,
+                seed: 12345,
+                free_stack: Vec::new(),
+            }
+        }
+
+        fn split(&mut self, node_idx: usize, key: i64, inclusive: bool) -> (usize, usize) {
+            if node_idx == 0 { return (0, 0); }
+            let n_key = self.nodes[node_idx - 1].key;
+            let go_left = if inclusive { n_key >= key } else { n_key > key };
+            if go_left {
+                let left_child = self.nodes[node_idx - 1].left;
+                let (l, r) = self.split(left_child, key, inclusive);
+                self.nodes[node_idx - 1].left = r;
+                Node::update(node_idx, &mut self.nodes);
+                (l, node_idx)
+            } else {
+                let right_child = self.nodes[node_idx - 1].right;
+                let (l, r) = self.split(right_child, key, inclusive);
+                self.nodes[node_idx - 1].right = l;
+                Node::update(node_idx, &mut self.nodes);
+                (node_idx, r)
+            }
+        }
+
+        fn merge(&mut self, l: usize, r: usize) -> usize {
+            if l == 0 || r == 0 { return if l == 0 { r } else { l }; }
+            if self.nodes[l - 1].priority > self.nodes[r - 1].priority {
+                let l_right = self.nodes[l - 1].right;
+                self.nodes[l - 1].right = self.merge(l_right, r);
+                Node::update(l, &mut self.nodes);
+                l
+            } else {
+                let r_left = self.nodes[r - 1].left;
+                self.nodes[r - 1].left = self.merge(l, r_left);
+                Node::update(r, &mut self.nodes);
+                r
+            }
+        }
+
+        pub fn insert(&mut self, key: i64) {
+            let (l, r) = self.split(self.root, key, true);
+            let node_idx = if let Some(idx) = self.free_stack.pop() {
+                self.nodes[idx - 1] = Node::new(key, &mut self.seed);
+                idx
+            } else {
+                self.nodes.push(Node::new(key, &mut self.seed));
+                self.nodes.len()
+            };
+            let merged_left = self.merge(l, node_idx);
+            self.root = self.merge(merged_left, r);
+        }
+
+        pub fn remove(&mut self, key: i64) {
+            let (l, mid_r) = self.split(self.root, key, true);
+            let (mid, r) = self.split(mid_r, key + 1, true);
+            if mid != 0 {
+                let m_left = self.nodes[mid - 1].left;
+                let m_right = self.nodes[mid - 1].right;
+                let new_mid = self.merge(m_left, m_right);
+                self.free_stack.push(mid);
+                let merged_left = self.merge(l, new_mid);
+                self.root = self.merge(merged_left, r);
+            } else {
+                self.root = self.merge(l, r);
+            }
+        }
+
+        pub fn bisect_left(&self, key: i64) -> usize {
+            let mut curr = self.root;
+            let mut rank = 0;
+            while curr != 0 {
+                let node = &self.nodes[curr - 1];
+                if node.key >= key {
+                    curr = node.left;
+                } else {
+                    let l_size = if node.left == 0 { 0 } else { self.nodes[node.left - 1].size };
+                    rank += 1 + l_size;
+                    curr = node.right;
+                }
+            }
+            rank
+        }
+
+        pub fn bisect_right(&self, key: i64) -> usize {
+            let mut curr = self.root;
+            let mut rank = 0;
+            while curr != 0 {
+                let node = &self.nodes[curr - 1];
+                if node.key > key {
+                    curr = node.left;
+                } else {
+                    let l_size = if node.left == 0 { 0 } else { self.nodes[node.left - 1].size };
+                    rank += 1 + l_size;
+                    curr = node.right;
+                }
+            }
+            rank
+        }
+
+        pub fn get(&self, index: usize) -> Option<i64> {
+            let mut curr = self.root;
+            let mut i = index;
+            while curr != 0 {
+                let node = &self.nodes[curr - 1];
+                let left_size = if node.left == 0 { 0 } else { self.nodes[node.left - 1].size };
+                match i.cmp(&left_size) {
+                    Ordering::Less => curr = node.left,
+                    Ordering::Equal => return Some(node.key),
+                    Ordering::Greater => {
+                        i -= left_size + 1;
+                        curr = node.right;
+                    }
+                }
+            }
+            None
+        }
+
+        pub fn len(&self) -> usize {
+            if self.root == 0 { 0 } else { self.nodes[self.root - 1].size }
+        }
+
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
+        }
+    }

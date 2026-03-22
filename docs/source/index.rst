@@ -3,6 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: _static/logo.png
+   :align: center
+
 Welcome to DSA Templates!
 =========================================
 Collection of data structures and algos implementations in Python 3 and Rust
@@ -51,6 +54,7 @@ Indices and tables
    minimum_spanning_tree
    fenwick_tree
    segment_tree
+   sorted_list
    interval_tree
    suffix_array
    suffix_tree

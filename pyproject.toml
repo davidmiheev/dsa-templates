@@ -9,3 +9,8 @@ dependencies = [
     "sphinx-rtd-theme",
     "sphinx-copybutton",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+]
