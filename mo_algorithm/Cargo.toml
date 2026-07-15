@@ -1,0 +1,14 @@
+[package]
+name = "mo_algorithm"
+version = "0.1.0"
+edition = "2021"
+description = "Mo's algorithm for offline range queries"
+publish = false
+
+[lib]
+name = "mo_algorithm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mo_algorithm"
+path = "src/bin/main.rs"

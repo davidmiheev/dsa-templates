@@ -1,0 +1,14 @@
+[package]
+name = "bst"
+version = "0.1.0"
+edition = "2021"
+description = "Binary Search Tree with insert, find, and inorder traversal"
+publish = false
+
+[lib]
+name = "bst"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bst"
+path = "src/bin/main.rs"

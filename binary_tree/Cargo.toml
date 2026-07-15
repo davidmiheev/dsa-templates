@@ -1,0 +1,14 @@
+[package]
+name = "binary_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Generic binary tree with traversals"
+publish = false
+
+[lib]
+name = "binary_tree"
+path = "src/lib.rs"
+
+[[bin]]
+name = "binary_tree"
+path = "src/bin/main.rs"

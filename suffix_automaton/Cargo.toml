@@ -1,0 +1,14 @@
+[package]
+name = "suffix_automaton"
+version = "0.1.0"
+edition = "2021"
+description = "Suffix automaton for substring problems"
+publish = false
+
+[lib]
+name = "suffix_automaton"
+path = "src/lib.rs"
+
+[[bin]]
+name = "suffix_automaton"
+path = "src/bin/main.rs"

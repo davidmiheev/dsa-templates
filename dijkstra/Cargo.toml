@@ -1,0 +1,14 @@
+[package]
+name = "dijkstra"
+version = "0.1.0"
+edition = "2021"
+description = "Dijkstra's shortest-path algorithm on a weighted graph"
+publish = false
+
+[lib]
+name = "dijkstra"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dijkstra"
+path = "src/bin/main.rs"

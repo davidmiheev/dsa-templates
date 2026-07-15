@@ -11,12 +11,9 @@ Welcome to DSA Templates!
 Collection of data structures and algos implementations in Python 3 and Rust
 
 .. note::
-   You can see code of all functions on this site by clicking on `[source]` as usual in tech docs. 
+   You can see code of all functions on this site by clicking on `[source]` as usual in tech docs.
    Maybe it is not the best approach to show implementations of algos and data structures and I should add more explicit code snippets.
    Hope this website will be useful for your journey in the world of algorithms and data structures.
-
-.. note::
-   Rust examples are coming soon...
 
 .. toctree::
    :caption: Contents:
@@ -54,10 +51,20 @@ Indices and tables
    minimum_spanning_tree
    fenwick_tree
    segment_tree
+   sparse_table
    sorted_list
    interval_tree
    suffix_array
    suffix_tree
+   suffix_automaton
+   rolling_hash
+   bit_manipulation
+   mo_algorithm
+   heavy_light_decomposition
+   centroid_decomposition
+   bfs
+   dfs
+   dijkstra
    topological_sort
    maximum_flow
    string_matching

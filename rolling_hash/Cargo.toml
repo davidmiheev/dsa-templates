@@ -1,0 +1,14 @@
+[package]
+name = "rolling_hash"
+version = "0.1.0"
+edition = "2021"
+description = "Single and double rolling hash for strings"
+publish = false
+
+[lib]
+name = "rolling_hash"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rolling_hash"
+path = "src/bin/main.rs"

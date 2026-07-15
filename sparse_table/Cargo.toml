@@ -1,0 +1,14 @@
+[package]
+name = "sparse_table"
+version = "0.1.0"
+edition = "2021"
+description = "Sparse Table for idempotent range queries (min/max/gcd)"
+publish = false
+
+[lib]
+name = "sparse_table"
+path = "src/lib.rs"
+
+[[bin]]
+name = "sparse_table"
+path = "src/bin/main.rs"

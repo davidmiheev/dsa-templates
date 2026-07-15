@@ -1,0 +1,14 @@
+[package]
+name = "bit_manipulation"
+version = "0.1.0"
+edition = "2021"
+description = "Bit manipulation utilities (count ones, lowest set bit, subsets, bitset)"
+publish = false
+
+[lib]
+name = "bit_manipulation"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bit_manipulation"
+path = "src/bin/main.rs"

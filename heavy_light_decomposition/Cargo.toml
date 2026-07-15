@@ -1,0 +1,14 @@
+[package]
+name = "heavy_light_decomposition"
+version = "0.1.0"
+edition = "2021"
+description = "Heavy-Light Decomposition for path queries on trees"
+publish = false
+
+[lib]
+name = "heavy_light_decomposition"
+path = "src/lib.rs"
+
+[[bin]]
+name = "heavy_light_decomposition"
+path = "src/bin/main.rs"

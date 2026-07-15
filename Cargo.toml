@@ -8,6 +8,20 @@ members = [
     "multiset",
     "sorted_list",
     "math",
+    "bfs",
+    "dfs",
+    "dijkstra",
+    "top_sort",
+    "binary_tree",
+    "bst",
+    "interval_tree",
+    "rolling_hash",
+    "bit_manipulation",
+    "mo_algorithm",
+    "sparse_table",
+    "heavy_light_decomposition",
+    "centroid_decomposition",
+    "suffix_automaton",
 ]
 
 [workspace.package]

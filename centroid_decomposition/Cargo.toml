@@ -1,0 +1,14 @@
+[package]
+name = "centroid_decomposition"
+version = "0.1.0"
+edition = "2021"
+description = "Centroid decomposition for tree queries"
+publish = false
+
+[lib]
+name = "centroid_decomposition"
+path = "src/lib.rs"
+
+[[bin]]
+name = "centroid_decomposition"
+path = "src/bin/main.rs"

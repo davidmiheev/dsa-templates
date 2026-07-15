@@ -1,0 +1,14 @@
+[package]
+name = "dfs"
+version = "0.1.0"
+edition = "2021"
+description = "Depth-First Search on a graph (adjacency-list)"
+publish = false
+
+[lib]
+name = "dfs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dfs"
+path = "src/bin/main.rs"

@@ -1,0 +1,14 @@
+[package]
+name = "bfs"
+version = "0.1.0"
+edition = "2021"
+description = "Breadth-First Search on a graph (adjacency-list)"
+publish = false
+
+[lib]
+name = "bfs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bfs"
+path = "src/bin/main.rs"
