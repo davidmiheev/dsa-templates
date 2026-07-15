@@ -7,3 +7,21 @@ dist/
 *.sh
 AGENTS.md
 
+# Cargo build artifacts
+target/
+**/target/
+
+# Sphinx build artifacts
+docs/_build/
+docs/build/
+docs/source/_build/
+
+# Sphinx static cache
+docs/_static/
+
+# Python bytecode
+**/__pycache__/
+*.pyc
+
+# Agent memory
+.agent_memory.json

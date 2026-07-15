@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+    "fenwick",
+    "segment_tree",
+    "union_find",
+    "trie",
+    "multiset",
+    "sorted_list",
+    "math",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

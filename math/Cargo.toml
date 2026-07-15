@@ -1,0 +1,14 @@
+[package]
+name = "math"
+version = "0.1.0"
+edition = "2021"
+description = "Precomputed modular binomial coefficients (nCr mod p)."
+publish = false
+
+[lib]
+name = "math"
+path = "src/lib.rs"
+
+[[bin]]
+name = "math"
+path = "src/bin/main.rs"

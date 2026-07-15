@@ -66,3 +66,4 @@ Indices and tables
    sorting
    multiset
    one_line
+   math

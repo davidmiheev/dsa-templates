@@ -1,3 +1,10 @@
+//! Precomputed modular binomial coefficients: `nCr mod p`.
+//!
+//! [`ModBinomial::new`] builds factorials and inverse factorials up to `max_n`
+//! in `O(max_n)` time using Fermat's little theorem for the modular inverse
+//! (`modulo` must be prime). Each subsequent [`ModBinomial::ncr`] call is `O(1)`.
+
+/// Binomial-coefficient table modulo a prime `modulo`.
 pub struct ModBinomial {
     fact: Vec<i64>,
     inv_fact: Vec<i64>,
@@ -5,6 +12,8 @@ pub struct ModBinomial {
 }
 
 impl ModBinomial {
+    /// Build the table for all `n` in `0..=max_n`. `modulo` must be prime
+    /// (the common choice is `1_000_000_007` or `998_244_353`).
     pub fn new(max_n: usize, modulo: i64) -> Self {
         let mut fact = vec![0; max_n + 1];
         let mut inv_fact = vec![0; max_n + 1];
@@ -41,6 +50,7 @@ impl ModBinomial {
         res
     }
 
+    /// Compute `nCr mod modulo`. Returns `0` when `r > n`.
     pub fn ncr(&self, n: usize, r: usize) -> i64 {
         if r > n {
             return 0;
@@ -48,13 +58,4 @@ impl ModBinomial {
         let denom = (self.inv_fact[r] * self.inv_fact[n - r]) % self.modulo;
         (self.fact[n] * denom) % self.modulo
     }
-}
-
-fn main() {
-    let modulo = 1_000_000_007; // Typical modulo 10^9 + 7
-    let binom = ModBinomial::new(1000, modulo);
-
-    println!("5 C 2 = {}", binom.ncr(5, 2)); // 10
-    println!("10 C 3 = {}", binom.ncr(10, 3)); // 120
-    println!("10 C 10 = {}", binom.ncr(10, 10)); // 1
 }

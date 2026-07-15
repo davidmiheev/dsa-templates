@@ -1,0 +1,14 @@
+[package]
+name = "segment_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Generic segment tree implementation"
+publish = false
+
+[lib]
+name = "segment_tree"
+path = "src/lib.rs"
+
+[[bin]]
+name = "segment_tree"
+path = "src/bin/main.rs"

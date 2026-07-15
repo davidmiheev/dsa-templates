@@ -1,0 +1,14 @@
+[package]
+name = "fenwick"
+version = "0.1.0"
+edition = "2021"
+description = "Fenwick Tree (Binary Indexed Tree) implementation"
+publish = false
+
+[lib]
+name = "fenwick"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fenwick"
+path = "src/bin/main.rs"

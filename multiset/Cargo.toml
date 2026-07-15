@@ -1,0 +1,14 @@
+[package]
+name = "multiset"
+version = "0.1.0"
+edition = "2021"
+description = "BTreeMap-backed multiset that preserves sorted order and supports multiplicity."
+publish = false
+
+[lib]
+name = "multiset"
+path = "src/lib.rs"
+
+[[bin]]
+name = "multiset"
+path = "src/bin/main.rs"

@@ -36,8 +36,12 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx_copybutton',
-    'sphinx_rtd_theme'
+    'sphinx_rtd_theme',
+    'ext.rustdoc',
 ]
+
+# Make the docs/source/ext/ package importable for Sphinx's extension loader.
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 templates_path = ['_templates']
 exclude_patterns = []

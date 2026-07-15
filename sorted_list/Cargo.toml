@@ -1,0 +1,14 @@
+[package]
+name = "sorted_list"
+version = "0.1.0"
+edition = "2021"
+description = "Treap-backed sorted list with O(log n) insert/remove/bisect/get and O(1) len/is_empty."
+publish = false
+
+[lib]
+name = "sorted_list"
+path = "src/lib.rs"
+
+[[bin]]
+name = "sorted_list"
+path = "src/bin/main.rs"

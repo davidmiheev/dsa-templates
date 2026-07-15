@@ -29,69 +29,20 @@ For example, if the index of a node is 6, then the range of elements that the no
 Rust Implementation
 -------------------
 
-.. code-block:: rust
+The Rust crate lives at ``fenwick/src/lib.rs``; build & run it with:
 
-    use std::ops::{AddAssign, Sub};
+.. code-block:: console
 
-    #[derive(Debug, Clone)]
-    pub struct FenwickTree<T> {
-        size: usize,
-        tree: Vec<T>,
-    }
+    $ cd fenwick && cargo run
+    $ cd fenwick && cargo test
 
-    impl<T> FenwickTree<T>
-    where
-        T: Copy + Default + AddAssign + Sub<Output = T>,
-    {
-        pub fn new(nums: &[T]) -> Self {
-            let size = nums.len();
-            let tree = vec![T::default(); size + 1];
+.. rust-api:: fenwick
+   :title: Fenwick Tree
+   :description: Generated API reference for the Fenwick Tree crate.
 
-            let mut ft = Self { size, tree };
-
-            for (i, &val) in nums.iter().enumerate() {
-                ft.update(i, val);
-            }
-            ft
-        }
-
-        pub fn update(&mut self, index: usize, delta: T) {
-            if index >= self.size {
-                panic!("Index out of bounds");
-            }
-
-            let mut i = index + 1;
-            loop {
-                if i > self.size { break }
-                self.tree[i] += delta;
-                i += i & (!i + 1); // equivalent to i & -i
-            }
-        }
-
-        pub fn pref(&self, index: usize) -> T {
-            if index >= self.size {
-                panic!("Index out of bounds");
-            }
-            let mut result = T::default();
-            let mut i = index + 1;
-            loop {
-                if i <= 0 { break }
-                result += self.tree[i];
-                i -= i & (!i + 1); // equivalent to i & -i
-            }
-            result
-        }
-
-        pub fn sum_range(&self, left: usize, right: usize) -> T {
-            if right < left || right >= self.size {
-                panic!("Invalid range");
-            }
-            match left == 0 {
-                true => self.pref(right),
-                false => self.pref(right) - self.pref(left - 1)
-            }
-        }
-    }
+.. literalinclude:: ../../fenwick/src/lib.rs
+   :language: rust
+   :linenos:
 
 
 Applications

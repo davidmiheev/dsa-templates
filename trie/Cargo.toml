@@ -1,0 +1,14 @@
+[package]
+name = "trie"
+version = "0.1.0"
+edition = "2021"
+description = "Trie (prefix tree) data structure for storing and querying strings."
+publish = false
+
+[lib]
+name = "trie"
+path = "src/lib.rs"
+
+[[bin]]
+name = "trie"
+path = "src/bin/main.rs"

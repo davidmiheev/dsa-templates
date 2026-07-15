@@ -1,0 +1,14 @@
+[package]
+name = "union_find"
+version = "0.1.0"
+edition = "2021"
+description = "Generic Union-Find (disjoint set) data structure with weighted union and per-component character."
+publish = false
+
+[lib]
+name = "union_find"
+path = "src/lib.rs"
+
+[[bin]]
+name = "union_find"
+path = "src/bin/main.rs"

@@ -1,10 +1,18 @@
+//! A treap-based sorted list.
+//!
+//! Supports the following operations, each `O(log n)`:
+//! - [`SortedList::insert`] / [`SortedList::remove`]
+//! - [`SortedList::bisect_left`] / [`SortedList::bisect_right`]
+//! - [`SortedList::get`]
+//!
+//! [`SortedList::len`] and [`SortedList::is_empty`] are `O(1)`.
+//!
+//! Implementation note: nodes are stored in a flat `Vec<Node>` addressed by
+//! 1-based indices (0 = none). Removed nodes go to a `free_stack` so the
+//! underlying storage can be reused without growing the array.
+
 use std::cmp::Ordering;
 
-/// A treap-based sorted list supporting:
-/// - O(log n) insert, remove, bisect_left, bisect_right, get
-/// - O(1) len, is_empty
-///
-/// Uses a flat array representation (indices instead of boxed nodes) with a free stack for memory reuse.
 #[derive(Debug)]
 struct Node {
     key: i64,
@@ -40,6 +48,7 @@ impl Node {
     }
 }
 
+/// Treap-backed sorted list of `i64` keys with multiplicity.
 pub struct SortedList {
     nodes: Vec<Node>,
     root: usize,
@@ -48,6 +57,7 @@ pub struct SortedList {
 }
 
 impl SortedList {
+    /// Construct an empty sorted list.
     pub fn new() -> Self {
         Self {
             nodes: Vec::with_capacity(1024 * 8),
@@ -58,7 +68,7 @@ impl SortedList {
     }
 
     /// Split by key. If `inclusive` is true, keys == key go to the left tree.
-    /// Returns (left_idx, right_idx) where indices are 1-based (0 means None).
+    /// Returns `(left_idx, right_idx)` where indices are 1-based (0 means None).
     fn split(&mut self, node_idx: usize, key: i64, inclusive: bool) -> (usize, usize) {
         if node_idx == 0 {
             return (0, 0);
@@ -82,7 +92,7 @@ impl SortedList {
         }
     }
 
-    /// Merge two trees where all keys in l < all keys in r.
+    /// Merge two trees where all keys in `l` are less than all keys in `r`.
     fn merge(&mut self, l: usize, r: usize) -> usize {
         if l == 0 || r == 0 {
             return if l == 0 { r } else { l };
@@ -115,7 +125,7 @@ impl SortedList {
         self.root = self.merge(merged_left, r);
     }
 
-    /// Remove one occurrence of key.
+    /// Remove one occurrence of `key`.
     pub fn remove(&mut self, key: i64) {
         let (l, mid_r) = self.split(self.root, key, true);
         let (mid, r) = self.split(mid_r, key + 1, true);
@@ -131,7 +141,7 @@ impl SortedList {
         }
     }
 
-    /// Number of keys strictly less than key.
+    /// Number of keys strictly less than `key`.
     pub fn bisect_left(&self, key: i64) -> usize {
         let mut curr = self.root;
         let mut rank = 0;
@@ -148,7 +158,7 @@ impl SortedList {
         rank
     }
 
-    /// Number of keys less than or equal to key.
+    /// Number of keys less than or equal to `key`.
     pub fn bisect_right(&self, key: i64) -> usize {
         let mut curr = self.root;
         let mut rank = 0;
@@ -165,7 +175,7 @@ impl SortedList {
         rank
     }
 
-    /// Get element at index (0-based). Returns None if out of bounds.
+    /// Get the element at `index` (0-based), or `None` if out of bounds.
     pub fn get(&self, index: usize) -> Option<i64> {
         let mut curr = self.root;
         let mut i = index;
@@ -184,6 +194,7 @@ impl SortedList {
         None
     }
 
+    /// Number of elements in the list (with multiplicities).
     pub fn len(&self) -> usize {
         if self.root == 0 {
             0
@@ -192,34 +203,8 @@ impl SortedList {
         }
     }
 
+    /// Whether the list is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
-}
-
-fn main() {
-    println!("Sorted List (Treap)");
-
-    let mut sl = SortedList::new();
-    sl.insert(5);
-    sl.insert(3);
-    sl.insert(8);
-    sl.insert(1);
-    sl.insert(9);
-    println!("len: {}", sl.len());
-
-    println!("bisect_left(5): {}", sl.bisect_left(5));
-    println!("bisect_right(5): {}", sl.bisect_right(5));
-
-    for i in 0..sl.len() {
-        print!("{:?} ", sl.get(i).unwrap());
-    }
-    println!();
-
-    sl.remove(5);
-    println!("After removing 5:");
-    for i in 0..sl.len() {
-        print!("{:?} ", sl.get(i).unwrap());
-    }
-    println!();
 }
