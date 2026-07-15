@@ -7,7 +7,6 @@ Rust Implementation
 -------------------
 
 .. rust-api:: trie
-   :title: Trie
    :description: Generated API reference for the Trie crate.
 
 .. literalinclude:: ../../trie/src/lib.rs

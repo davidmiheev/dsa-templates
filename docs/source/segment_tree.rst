@@ -8,7 +8,6 @@ Rust Implementation
 -------------------
 
 .. rust-api:: segment_tree
-   :title: Segment Tree
    :description: Generated API reference for the Segment Tree crate.
 
 .. literalinclude:: ../../segment_tree/src/lib.rs

@@ -10,7 +10,6 @@ Rust Implementation
 -------------------
 
 .. rust-api:: union_find
-   :title: Union Find
    :description: Generated API reference for the Union Find crate.
 
 .. literalinclude:: ../../union_find/src/lib.rs

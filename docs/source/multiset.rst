@@ -11,7 +11,6 @@ The `BTreeMap` will maintain the sorted order of the elements, allowing us to ef
 The `BTreeMap` isn't prone to collisions blowup (`HashMap` is prone), so it is a good choice for implementing a multiset.
 
 .. rust-api:: multiset
-   :title: Multiset
    :description: Generated API reference for the Multiset crate.
 
 .. literalinclude:: ../../multiset/src/lib.rs

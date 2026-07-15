@@ -13,7 +13,6 @@ Rust Implementation
 -------------------
 
 .. rust-api:: sorted_list
-   :title: Sorted List
    :description: Generated API reference for the Sorted List crate.
 
 .. literalinclude:: ../../sorted_list/src/lib.rs

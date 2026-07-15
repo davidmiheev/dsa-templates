@@ -37,7 +37,6 @@ The Rust crate lives at ``fenwick/src/lib.rs``; build & run it with:
     $ cd fenwick && cargo test
 
 .. rust-api:: fenwick
-   :title: Fenwick Tree
    :description: Generated API reference for the Fenwick Tree crate.
 
 .. literalinclude:: ../../fenwick/src/lib.rs

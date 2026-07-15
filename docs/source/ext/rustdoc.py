@@ -1,8 +1,9 @@
 """Sphinx extension that integrates ``cargo doc`` output into the build.
 
-Adds a reST directive ``.. rust-api:: <crate>`` that renders as a plain
-heading + paragraph + link, identical in style to any other RTD section.
-The directive's link points to ``_rust_doc/<crate>/index.html``.
+Adds a reST directive ``.. rust-api:: <crate>`` that renders as a single
+paragraph with a link to ``_rust_doc/<crate>/index.html`` — the rendered
+cargo doc for the crate. The paragraph is styled identically to any
+other prose on the page, with no extra heading.
 
 The entire ``target/doc/`` tree is copied into the Sphinx output dir under
 ``_rust_doc/`` via the ``build-finished`` hook, so all the cargo doc
@@ -155,63 +156,52 @@ def _make_reference(text: str, refuri: str) -> nodes.reference:
 
 
 class RustApiDirective(Directive):
-    """Render an "API Documentation" section that links to a crate's cargo doc.
+    """Render a paragraph + link to a crate's cargo doc.
 
     Usage::
 
         .. rust-api:: fenwick
-           :title: Fenwick Tree (optional; defaults to crate name)
            :description: Short one-line description (optional)
 
-    The output is a regular ``<h2>`` heading + paragraph + link, identical
-    in style to prose anywhere else on the page.
+    The output is a single paragraph containing the description and a
+    link to the rendered ``cargo doc`` output. Intentionally emits **no
+    heading**: each topic page already has its own ``Rust Implementation``
+    heading, and adding another ``<h2>`` next to it would look duplicated
+    and bloat the toctree. The paragraph alone matches the visual style
+    of other prose on the page.
     """
 
     required_arguments = 1  # the crate name
     optional_arguments = 0
     has_content = False
     option_spec = {
-        "title": lambda s: s.strip(),
         "description": lambda s: s.strip(),
     }
 
     def run(self) -> list[nodes.Node]:
         crate = self.arguments[0]
-        title = self.options.get("title", crate)
         description = self.options.get(
             "description",
             f"Generated API reference for the {crate} crate.",
         )
 
-        # Return a flat list of nodes (heading, description paragraph, link
-        # paragraph) so docutils drops them into the surrounding document
-        # at the directive's location. Returning a nested ``section`` would
-        # make this a sub-section under whatever <section> the page is in,
-        # which is what we want for headings that nest under the parent
-        # heading level. We use raw heading + paragraphs to keep styling
-        # identical to other prose on the page.
-        result: list[nodes.Node] = []
-
-        heading = nodes.title(
-            "",
-            f"{title} \u2014 Rust API",
-        )
-        result.append(heading)
+        # Build a single paragraph. docutils drops it into the surrounding
+        # document at the directive's location, so styling matches other
+        # prose on the page exactly.
+        link_text = "View the rendered API reference \u2192"
+        link_node = _make_reference(link_text, _rust_doc_url(crate))
 
         if description:
-            result.append(nodes.paragraph("", description))
+            # "Generated API reference for the Fenwick Tree crate. View the rendered API reference →"
+            para = nodes.paragraph(
+                "",
+                description + " ",
+                link_node,
+            )
+        else:
+            para = nodes.paragraph("", link_node)
 
-        link_para = nodes.paragraph(
-            "",
-            "",
-            _make_reference(
-                "View the rendered API reference \u2192",
-                _rust_doc_url(crate),
-            ),
-        )
-        result.append(link_para)
-
-        return result
+        return [para]
 
 
 def _rust_doc_url(crate: str) -> str:

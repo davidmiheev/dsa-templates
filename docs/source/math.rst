@@ -8,7 +8,6 @@ Rust Implementation
 -------------------
 
 .. rust-api:: math
-   :title: Math Utilities
    :description: Modular binomial coefficients (``nCr mod p``) and other number-theoretic helpers.
 
 .. literalinclude:: ../../math/src/lib.rs
