@@ -1,4 +1,4 @@
-use std::io::{self, Read, Write, BufWriter, StdoutLock};
+use std::io::{self, Read, BufRead, Write, BufWriter, StdinLock, StdoutLock};
 use std::cmp::{min, max};
 use std::iter::FromIterator;
 use std::fmt::{Display, Debug};
@@ -8,6 +8,9 @@ use ac_library::{ModInt998244353 as mint, Modulus, StaticModInt};
 
 const INF: i64 = std::i64::MAX / 2;
 const MOD: i64 = 998244353;
+// Set to true for interactive problems: FastScan then reads stdin lazily
+// (line by line) and Out flushes after every println/print_vec.
+const INTERACTIVE: bool = false;
 
 
 fn gcd(a: i64, b: i64) -> i64 {
@@ -105,30 +108,64 @@ fn solve(cin: &mut FastScan, out: &mut Out) {
 
 
 fn main() {
-    let mut cin = FastScan::new();
-    let mut out = Out::new();
+    let mut cin = FastScan::new(INTERACTIVE);
+    let mut out = Out::new(INTERACTIVE);
+    // Interactive quick-start (INTERACTIVE = true):
+    //   out.println(format_args!("? {} {}", a, b)); // written and flushed at once
+    //   let reply: i64 = cin.next();                // blocks only until the reply line
     let t = 1; // cin.next::<usize>();
     for _ in 0..t {
         solve(&mut cin, &mut out);
     }
 }
 
-struct FastScan<'a> {
-    iter: std::str::SplitWhitespace<'a>,
+/// Whitespace-separated token reader over stdin.
+/// - `interactive = false`: reads all of stdin up front (fastest; needs EOF, so not
+///   usable when a judge answers your queries).
+/// - `interactive = true`: reads one line at a time, so it only blocks until the next
+///   reply line arrives. Tokens may share a line or span lines in both modes.
+struct FastScan {
+    stdin: StdinLock<'static>,
+    interactive: bool,
+    buf: String,
+    pos: usize,
 }
 
-impl<'a> FastScan<'a> {
-    fn new() -> Self {
-        let mut input_buffer = String::new();
-        let _ = io::stdin().read_to_string(&mut input_buffer);
-        let static_str: &'static str = Box::leak(input_buffer.into_boxed_str());
-        FastScan {
-            iter: static_str.split_whitespace(),
+impl FastScan {
+    fn new(interactive: bool) -> Self {
+        let mut s = FastScan { stdin: io::stdin().lock(), interactive, buf: String::new(), pos: 0 };
+        if !interactive {
+            s.stdin.read_to_string(&mut s.buf).unwrap();
+        }
+        s
+    }
+
+    fn token(&mut self) -> &str {
+        loop {
+            let bytes = self.buf.as_bytes();
+            let mut i = self.pos;
+            while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+                i += 1;
+            }
+            if i < bytes.len() {
+                let start = i;
+                while i < bytes.len() && !bytes[i].is_ascii_whitespace() {
+                    i += 1;
+                }
+                self.pos = i;
+                return &self.buf[start..i];
+            }
+            self.buf.clear();
+            self.pos = 0;
+            if !self.interactive || self.stdin.read_line(&mut self.buf).unwrap() == 0 {
+                panic!("Unexpected end of input: check number of testcases or input format");
+            }
         }
     }
 
     fn next<T: std::str::FromStr>(&mut self) -> T {
-        self.iter.next().and_then(|s| s.parse().ok()).expect("Check number of testcases or input format")
+        let t = self.token();
+        t.parse().ok().unwrap_or_else(|| panic!("Cannot parse {:?} as {}", t, std::any::type_name::<T>()))
     }
 
     fn read_vec<T: std::str::FromStr>(&mut self, size: usize) -> Vec<T> {
@@ -139,15 +176,18 @@ impl<'a> FastScan<'a> {
 
 /// Buffered stdout shared by the whole program (create once in `main`, pass as `&mut Out`).
 /// One lock + one big buffer instead of a fresh lock/BufWriter per call, so printing
-/// inside a loop (e.g. once per query) stays cheap. Flushed on drop; call `flush()`
-/// explicitly for interactive problems.
+/// inside a loop (e.g. once per query) stays cheap. Flushed on drop.
+/// With `interactive = true`, `println` and `print_vec` also flush, so every line
+/// reaches the judge immediately; `print` never flushes (finish the line with
+/// `println`, or call `flush()`).
 struct Out {
     w: BufWriter<StdoutLock<'static>>,
+    interactive: bool,
 }
 
 impl Out {
-    fn new() -> Self {
-        Out { w: BufWriter::with_capacity(1 << 17, io::stdout().lock()) }
+    fn new(interactive: bool) -> Self {
+        Out { w: BufWriter::with_capacity(1 << 17, io::stdout().lock()), interactive }
     }
 
     /// `print!` analog: writes `x` without a trailing newline.
@@ -158,6 +198,7 @@ impl Out {
     /// `println!` analog: writes `x` followed by a newline.
     fn println<T: Display>(&mut self, x: T) {
         writeln!(self.w, "{}", x).unwrap();
+        self.end_line();
     }
 
     /// Writes all items of `v` joined by `sep`, followed by a newline
@@ -171,6 +212,13 @@ impl Out {
             }
         }
         writeln!(self.w).unwrap();
+        self.end_line();
+    }
+
+    fn end_line(&mut self) {
+        if self.interactive {
+            self.w.flush().unwrap();
+        }
     }
 
     fn flush(&mut self) {
