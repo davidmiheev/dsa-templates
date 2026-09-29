@@ -119,6 +119,7 @@ fn main() {
     }
 }
 
+// ---- fast I/O: begin (tokens are separated by any byte <= b' ') ----
 /// Whitespace-separated token reader over stdin.
 /// - `interactive = false`: reads all of stdin up front (fastest; needs EOF, so not
 ///   usable when a judge answers your queries).
@@ -144,12 +145,12 @@ impl FastScan {
         loop {
             let bytes = self.buf.as_bytes();
             let mut i = self.pos;
-            while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+            while i < bytes.len() && bytes[i] <= b' ' {
                 i += 1;
             }
             if i < bytes.len() {
                 let start = i;
-                while i < bytes.len() && !bytes[i].is_ascii_whitespace() {
+                while i < bytes.len() && bytes[i] > b' ' {
                     i += 1;
                 }
                 self.pos = i;
@@ -231,6 +232,7 @@ impl Drop for Out {
         let _ = self.w.flush();
     }
 }
+// ---- fast I/O: end ----
 
 
 pub struct Math<M: Modulus> {
