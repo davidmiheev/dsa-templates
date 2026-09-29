@@ -128,7 +128,8 @@ impl SortedList {
     /// Remove one occurrence of `key`.
     pub fn remove(&mut self, key: i64) {
         let (l, mid_r) = self.split(self.root, key, true);
-        let (mid, r) = self.split(mid_r, key + 1, true);
+        // Exclusive split (keys <= `key` go left): unlike `key + 1` it cannot overflow at i64::MAX.
+        let (mid, r) = self.split(mid_r, key, false);
         if mid != 0 {
             let m_left = self.nodes[mid - 1].left;
             let m_right = self.nodes[mid - 1].right;
