@@ -224,6 +224,77 @@ impl CentroidTree {
     }
 }
 
+impl CentroidTree {
+    /// For every `k` in `0..n`, the number of unordered pairs of distinct vertices at distance
+    /// exactly `k` (so entry 0 is 0), by counting paths through each centroid with the supplied
+    /// `convolve` (any exact convolution of `u64` sequences, e.g. an NTT; its results are
+    /// bounded by `n^2`). Total `O(n log n)` plus the convolutions, whose lengths add up to
+    /// `O(n)` per level.
+    ///
+    /// ```
+    /// use centroid_decomposition::CentroidTree;
+    /// let naive = |a: &[u64], b: &[u64]| {
+    ///     let mut c = vec![0u64; a.len() + b.len() - 1];
+    ///     for (i, &x) in a.iter().enumerate() { for (j, &y) in b.iter().enumerate() { c[i + j] += x * y; } }
+    ///     c
+    /// };
+    /// let t = CentroidTree::from_edges(4, &[(0, 1), (1, 2), (1, 3)]);
+    /// assert_eq!(t.pair_counts_by_distance(naive), vec![0, 3, 3, 0]);
+    /// ```
+    pub fn pair_counts_by_distance(&self, convolve: impl Fn(&[u64], &[u64]) -> Vec<u64>) -> Vec<u64> {
+        let n = self.len();
+        let mut plus = vec![0u64; n + 1];
+        let mut minus = vec![0u64; n + 1];
+        // A_c[d]: vertices of the component of c at distance d from c.
+        // B_c[d]: vertices of the component of c at distance d from parent[c].
+        let mut a_start = vec![0usize; n + 1];
+        for c in 0..n {
+            a_start[c + 1] = a_start[c] + self.radius[c] + 1;
+        }
+        let mut b_len = vec![0usize; n];
+        for v in 0..n {
+            let mut level = self.depth[v];
+            let mut c = v;
+            while level > 0 {
+                b_len[c] = b_len[c].max(self.dist[level - 1][v] as usize + 1);
+                c = self.parent[c];
+                level -= 1;
+            }
+        }
+        let mut b_start = vec![0usize; n + 1];
+        for c in 0..n {
+            b_start[c + 1] = b_start[c] + b_len[c];
+        }
+        let mut a = vec![0u64; a_start[n]];
+        let mut b = vec![0u64; b_start[n]];
+        for v in 0..n {
+            let mut level = self.depth[v];
+            let mut c = v;
+            loop {
+                a[a_start[c] + self.dist[level][v] as usize] += 1;
+                if level == 0 {
+                    break;
+                }
+                b[b_start[c] + self.dist[level - 1][v] as usize] += 1;
+                c = self.parent[c];
+                level -= 1;
+            }
+        }
+        for c in 0..n {
+            for (k, x) in convolve(&a[a_start[c]..a_start[c + 1]], &a[a_start[c]..a_start[c + 1]]).into_iter().enumerate() {
+                plus[k] += x;
+            }
+            if b_len[c] > 0 {
+                let seg = &b[b_start[c]..b_start[c + 1]];
+                for (k, x) in convolve(seg, seg).into_iter().enumerate() {
+                    minus[k] += x;
+                }
+            }
+        }
+        (0..n).map(|k| if k == 0 { 0 } else { (plus[k] - minus[k]) / 2 }).collect()
+    }
+}
+
 /// Fenwick trees stored back to back: tree `t` has `len(t)` slots.
 #[derive(Debug, Clone)]
 struct FlatFenwick<T> {

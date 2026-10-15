@@ -221,3 +221,34 @@ fn bad_inputs_panic() {
     assert!(catch_unwind(|| CentroidTree::new(&[])).is_err());
     assert!(catch_unwind(|| CentroidTree::from_edges(3, &[(0, 1), (0, 1)])).is_err(), "disconnected / cyclic");
 }
+
+#[test]
+fn pair_counts_by_distance_match_all_pairs() {
+    let naive = |a: &[u64], b: &[u64]| {
+        let mut c = vec![0u64; a.len() + b.len() - 1];
+        for (i, &x) in a.iter().enumerate() {
+            for (j, &y) in b.iter().enumerate() {
+                c[i + j] += x * y;
+            }
+        }
+        c
+    };
+    let mut st = Stress::new("centroid/pair_counts");
+    for case in 0..500 * scale() {
+        let mut rng = Rng::new(case as u64 + 900);
+        let n = rng.range(1, 40) as usize;
+        let adj = rng.tree(n, case % 4);
+        let all: Vec<Vec<usize>> = (0..n).map(|s| bfs_dist(&adj, s)).collect();
+        let mut want = vec![0u64; n];
+        for u in 0..n {
+            for v in u + 1..n {
+                want[all[u][v]] += 1;
+            }
+        }
+        let t = CentroidTree::new(&adj);
+        assert_eq!(t.pair_counts_by_distance(naive), want, "case {case} n={n}");
+        st.case();
+        st.ops(n * n);
+    }
+    st.done();
+}
