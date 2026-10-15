@@ -24,6 +24,10 @@
 //! assert_eq!(ft.lower_bound(15), 2); // prefix sums 1, 14, 19, ...: the first >= 15 is at index 2
 //! ```
 
+mod offline_2d;
+
+pub use offline_2d::Fenwick2D;
+
 use std::ops::{AddAssign, Sub};
 
 /// Fenwick Tree (Binary Indexed Tree).
