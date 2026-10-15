@@ -75,6 +75,7 @@ members = [
     "k_shortest_walks",
     "min_cost_flow",
     "extreme_sets",
+    "deque",
 ]
 
 [workspace.package]
