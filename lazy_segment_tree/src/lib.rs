@@ -244,7 +244,7 @@ impl<A: MapMonoid> LazySegmentTree<A> {
         }
         let mut acc = <A::M as Monoid>::identity();
         loop {
-            while l % 2 == 0 {
+            while l & 1 == 0 {
                 l >>= 1;
             }
             if !pred(&<A::M as Monoid>::op(&acc, &self.d[l])) {

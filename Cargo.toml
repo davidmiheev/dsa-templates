@@ -44,6 +44,7 @@ members = [
     "convolution",
     "euler_tour_tree",
     "tree_path_affine_sum",
+    "permutation_tree",
 ]
 
 [workspace.package]
