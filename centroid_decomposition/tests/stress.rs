@@ -5,13 +5,15 @@
 //! (every piece left after removing `c` has at most half the vertices), and `c`'s children in
 //! the centroid tree must be exactly one vertex per remaining piece.
 
-use centroid_decomposition::build_centroid_tree;
+use centroid_decomposition::{CentroidTree, ContourAdd, ContourSum};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
 #[path = "../../stress_common.rs"]
 mod common;
 use common::{scale, Rng, Stress};
 
-fn verify(adj: &[Vec<usize>], parent: &[Option<usize>], depth: &[usize], ctx: &str) {
+fn verify(adj: &[Vec<usize>], parent_raw: &[usize], depth: &[usize], ctx: &str) {
+    let parent: Vec<Option<usize>> = parent_raw.iter().map(|&p| if p == CentroidTree::NONE { None } else { Some(p) }).collect();
     let n = adj.len();
     assert_eq!((parent.len(), depth.len()), (n, n));
     let roots: Vec<usize> = (0..n).filter(|&v| parent[v].is_none()).collect();
@@ -75,15 +77,55 @@ fn verify(adj: &[Vec<usize>], parent: &[Option<usize>], depth: &[usize], ctx: &s
     assert!(depth.iter().all(|&d| d < bound), "depth must be O(log n) {ctx}");
 }
 
+fn bfs_dist(adj: &[Vec<usize>], s: usize) -> Vec<usize> {
+    let mut d = vec![usize::MAX; adj.len()];
+    d[s] = 0;
+    let mut q = vec![s];
+    let mut i = 0;
+    while i < q.len() {
+        let v = q[i];
+        i += 1;
+        for &u in &adj[v] {
+            if d[u] == usize::MAX {
+                d[u] = d[v] + 1;
+                q.push(u);
+            }
+        }
+    }
+    d
+}
+
 #[test]
-fn produces_valid_decompositions() {
+fn produces_valid_decompositions_and_distances() {
     let mut st = Stress::new("centroid/naive");
     for case in 0..600 * scale() {
         let mut rng = Rng::new(case as u64);
         let n = rng.range(1, 45) as usize;
         let adj = rng.tree(n, case % 4);
-        let (parent, depth) = build_centroid_tree(&adj);
-        verify(&adj, &parent, &depth, &format!("case {case} n={n} shape={}", case % 4));
+        let t = CentroidTree::new(&adj);
+        verify(&adj, &t.parent, &t.depth, &format!("case {case} n={n} shape={}", case % 4));
+        // Distances to every centroid ancestor, radius, and the iterator.
+        let all: Vec<Vec<usize>> = (0..n).map(|s| bfs_dist(&adj, s)).collect();
+        for v in 0..n {
+            let mut chain = vec![];
+            let mut c = v;
+            while c != CentroidTree::NONE {
+                chain.push(c);
+                c = t.parent[c];
+            }
+            let got: Vec<(usize, usize)> = t.ancestors(v).collect();
+            let want: Vec<(usize, usize)> = chain.iter().map(|&c| (c, all[v][c])).collect();
+            assert_eq!(got, want, "ancestors of {v}, case {case}");
+            for (k, &c) in chain.iter().enumerate() {
+                assert_eq!(t.dist_to_ancestor(v, t.depth[v] - k), all[v][c]);
+            }
+        }
+        // radius[c] = farthest vertex in c's component.
+        for c in 0..n {
+            let comp_far = (0..n).filter(|&u| { let mut x = u; loop { if x == c { break true; } if x == CentroidTree::NONE { break false; } x = t.parent[x]; } }).map(|u| all[c][u]).max().unwrap();
+            assert_eq!(t.radius[c], comp_far, "radius of {c}, case {case}");
+        }
+        assert!(catch_unwind(AssertUnwindSafe(|| t.dist_to_ancestor(t.root, 1))).is_err());
         st.case();
         st.ops(n);
     }
@@ -91,36 +133,91 @@ fn produces_valid_decompositions() {
 }
 
 #[test]
-fn large_trees_have_logarithmic_depth() {
-    // Recursion depth equals tree depth in `compute_sizes`, so run on a big stack.
-    std::thread::Builder::new()
-        .stack_size(512 << 20)
-        .spawn(|| {
-            let mut st = Stress::new("centroid/large");
-            for shape in 0..4 {
-                let mut rng = Rng::new(200 + shape as u64);
-                let n = 200_000;
-                let adj = rng.tree(n, shape);
-                let (parent, depth) = build_centroid_tree(&adj);
-                st.case();
-                let bound = (usize::BITS - n.leading_zeros()) as usize;
-                assert_eq!(parent.iter().filter(|p| p.is_none()).count(), 1, "one root, shape {shape}");
-                assert!(depth.iter().all(|&d| d < bound), "depth < {bound}, shape {shape}");
-                for v in 0..n {
-                    if let Some(p) = parent[v] {
-                        assert_eq!(depth[v], depth[p] + 1);
-                    }
-                }
-                st.ops(n);
+fn contour_sum_matches_bfs() {
+    let mut st = Stress::new("centroid/contour_sum");
+    for case in 0..500 * scale() {
+        let mut rng = Rng::new(case as u64 + 100);
+        let n = rng.range(1, 40) as usize;
+        let adj = rng.tree(n, case % 4);
+        let all: Vec<Vec<usize>> = (0..n).map(|s| bfs_dist(&adj, s)).collect();
+        let mut c = ContourSum::<i64>::new(CentroidTree::new(&adj));
+        let mut val = vec![0i64; n];
+        st.case();
+        for step in 0..100 {
+            if rng.chance(1, 2) {
+                let (v, x) = (rng.below(n), rng.range(-1000, 1000));
+                c.add(v, x);
+                val[v] += x;
+            } else {
+                let (p, l) = (rng.below(n), rng.below(n + 2));
+                let r = l + rng.below(n + 2 - l);
+                let want: i64 = (0..n).filter(|&u| l <= all[p][u] && all[p][u] < r).map(|u| val[u]).sum();
+                assert_eq!(c.sum(p, l, r), want, "sum({p}, {l}, {r}) case {case} step {step}");
             }
-            st.done();
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+            st.ops(1);
+        }
+    }
+    st.done();
 }
 
 #[test]
-fn empty_tree_panics() {
-    assert!(std::panic::catch_unwind(|| build_centroid_tree(&[])).is_err());
+fn contour_add_matches_bfs() {
+    let mut st = Stress::new("centroid/contour_add");
+    for case in 0..500 * scale() {
+        let mut rng = Rng::new(case as u64 + 300);
+        let n = rng.range(1, 40) as usize;
+        let adj = rng.tree(n, case % 4);
+        let all: Vec<Vec<usize>> = (0..n).map(|s| bfs_dist(&adj, s)).collect();
+        let mut c = ContourAdd::<i64>::new(CentroidTree::new(&adj));
+        let mut val = vec![0i64; n];
+        st.case();
+        for step in 0..100 {
+            if rng.chance(1, 2) {
+                let (p, l) = (rng.below(n), rng.below(n + 2));
+                let r = l + rng.below(n + 2 - l);
+                let x = rng.range(-1000, 1000);
+                c.add(p, l, r, x);
+                for u in 0..n {
+                    if l <= all[p][u] && all[p][u] < r {
+                        val[u] += x;
+                    }
+                }
+            } else {
+                let v = rng.below(n);
+                assert_eq!(c.get(v), val[v], "get({v}) case {case} step {step}");
+            }
+            st.ops(1);
+        }
+    }
+    st.done();
+}
+
+#[test]
+fn large_trees_have_logarithmic_depth_and_work() {
+    let mut st = Stress::new("centroid/large");
+    for shape in 0..4 {
+        let mut rng = Rng::new(200 + shape as u64);
+        let n = 200_000;
+        let adj = rng.tree(n, shape);
+        let t = CentroidTree::new(&adj);
+        st.case();
+        let bound = (usize::BITS - n.leading_zeros()) as usize;
+        assert_eq!(t.parent.iter().filter(|&&p| p == CentroidTree::NONE).count(), 1, "one root, shape {shape}");
+        assert!(t.depth.iter().all(|&d| d < bound), "depth < {bound}, shape {shape}");
+        let mut sums = ContourSum::<i64>::new(t);
+        for i in 0..20_000 * scale() {
+            let v = rng.below(n);
+            sums.add(v, 1);
+            let _ = sums.sum(rng.below(n), 0, 1 + i % 50);
+        }
+        assert_eq!(sums.sum(0, 0, n + 1), 20_000 * scale() as i64);
+        st.ops(n);
+    }
+    st.done();
+}
+
+#[test]
+fn bad_inputs_panic() {
+    assert!(catch_unwind(|| CentroidTree::new(&[])).is_err());
+    assert!(catch_unwind(|| CentroidTree::from_edges(3, &[(0, 1), (0, 1)])).is_err(), "disconnected / cyclic");
 }
