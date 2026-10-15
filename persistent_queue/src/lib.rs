@@ -26,13 +26,18 @@
 //! assert_eq!(q.len(v2), 2);
 //! ```
 
+struct Node<T> {
+    parent: u32,
+    jump: u32,
+    depth: u32,
+    value: Option<T>, // `None` only for the sentinel root
+}
+
 /// A persistent queue of `T`.
 pub struct PersistentQueue<T> {
-    // Node ids start at 1; id 0 is the sentinel root (depth 0, no value).
-    parent: Vec<u32>,
-    jump: Vec<u32>,
-    depth: Vec<u32>,
-    value: Vec<T>, // value[id - 1]
+    // Node ids start at 1; id 0 is the sentinel root (depth 0, no value). The fields of a node
+    // live together so that a walk up the tree touches one cache line per step.
+    nodes: Vec<Node<T>>,
     /// Version `v` = (tail node, number of pops).
     versions: Vec<(u32, u32)>,
 }
@@ -48,7 +53,7 @@ impl<T: Clone> PersistentQueue<T> {
     pub const EMPTY: usize = 0;
 
     pub fn new() -> Self {
-        PersistentQueue { parent: vec![0], jump: vec![0], depth: vec![0], value: Vec::new(), versions: vec![(0, 0)] }
+        PersistentQueue { nodes: vec![Node { parent: 0, jump: 0, depth: 0, value: None }], versions: vec![(0, 0)] }
     }
 
     /// Number of versions created so far (including the empty one).
@@ -64,7 +69,7 @@ impl<T: Clone> PersistentQueue<T> {
     /// Number of elements in `version`.
     pub fn len(&self, version: usize) -> usize {
         let (tail, pops) = self.check(version);
-        (self.depth[tail as usize] - pops) as usize
+        (self.nodes[tail as usize].depth - pops) as usize
     }
 
     pub fn is_empty(&self, version: usize) -> bool {
@@ -73,11 +78,13 @@ impl<T: Clone> PersistentQueue<T> {
 
     /// The ancestor of `u` at depth `d` (`d <= depth[u]`), in `O(log n)`.
     fn ancestor(&self, mut u: u32, d: u32) -> u32 {
-        while self.depth[u as usize] > d {
-            let j = self.jump[u as usize];
-            u = if self.depth[j as usize] >= d { j } else { self.parent[u as usize] };
+        loop {
+            let node = &self.nodes[u as usize];
+            if node.depth <= d {
+                return u;
+            }
+            u = if self.nodes[node.jump as usize].depth >= d { node.jump } else { node.parent };
         }
-        u
     }
 
     /// The front element of `version`.
@@ -88,25 +95,19 @@ impl<T: Clone> PersistentQueue<T> {
         let (tail, pops) = self.check(version);
         assert!(self.len(version) > 0, "front of an empty queue (version {version})");
         let node = self.ancestor(tail, pops + 1);
-        self.value[node as usize - 1].clone()
+        self.nodes[node as usize].value.clone().expect("the root holds no value")
     }
 
     /// A new version: `version` with `x` appended. Returns its id.
     pub fn push_back(&mut self, version: usize, x: T) -> usize {
         let (tail, pops) = self.check(version);
-        let id = self.parent.len() as u32;
-        let (p, d) = (tail as usize, self.depth[tail as usize] + 1);
-        let jp = self.jump[p] as usize;
+        let id = self.nodes.len() as u32;
+        let p = &self.nodes[tail as usize];
+        let jp = &self.nodes[p.jump as usize];
         // Skew-binary jump pointers: jump two levels' worth when the last two jumps are equal.
-        let jump = if self.depth[p] - self.depth[jp] == self.depth[jp] - self.depth[self.jump[jp] as usize] {
-            self.jump[jp]
-        } else {
-            tail
-        };
-        self.parent.push(tail);
-        self.jump.push(jump);
-        self.depth.push(d);
-        self.value.push(x);
+        let jump = if p.depth - jp.depth == jp.depth - self.nodes[jp.jump as usize].depth { jp.jump } else { tail };
+        let depth = p.depth + 1;
+        self.nodes.push(Node { parent: tail, jump, depth, value: Some(x) });
         self.versions.push((id, pops));
         self.versions.len() - 1
     }
