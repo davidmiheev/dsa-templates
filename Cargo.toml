@@ -62,6 +62,10 @@ members = [
     "modint",
     "modmatrix",
     "spanning_count",
+    "graph_coloring",
+    "independent_set",
+    "steiner_tree",
+    "edge_coloring",
 ]
 
 [workspace.package]
