@@ -37,6 +37,7 @@ members = [
     "segment_tree_beats",
     "linear_add_range_min",
     "kd_tree",
+    "range_sort_sequence",
 ]
 
 [workspace.package]
