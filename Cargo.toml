@@ -33,6 +33,7 @@ members = [
     "persistent_queue",
     "persistent_lazy_segment_tree",
     "dynamic_segment_tree",
+    "point_set_range_frequency",
 ]
 
 [workspace.package]
