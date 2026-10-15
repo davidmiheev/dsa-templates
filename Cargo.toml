@@ -24,6 +24,10 @@ members = [
     "suffix_automaton",
     "algebra",
     "lazy_segment_tree",
+    "li_chao_tree",
+    "binary_trie",
+    "fast_set",
+    "queue_aggregation",
 ]
 
 [workspace.package]
