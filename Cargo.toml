@@ -39,6 +39,7 @@ members = [
     "kd_tree",
     "range_sort_sequence",
     "seaweed",
+    "tree_algos",
 ]
 
 [workspace.package]
