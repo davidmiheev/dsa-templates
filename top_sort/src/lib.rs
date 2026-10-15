@@ -5,19 +5,32 @@
 //! order. Kahn's algorithm produces such an order by repeatedly
 //! removing vertices with in-degree zero.
 //!
-//! This module exposes [`topological_sort`], which returns `Some(order)`
-//! if the graph is a DAG and `None` if the graph contains a cycle (in
-//! which case no topological order exists).
+//! This module exposes [`topological_sort`], which returns an order and
+//! asserts that the graph is a DAG, and [`is_acyclic`] to test that
+//! precondition without panicking.
 
 use std::collections::VecDeque;
 
 /// Compute a topological order of a directed graph.
 ///
-/// `graph[u]` is the list of outgoing neighbours of `u`. Returns
-/// `Some(Vec<usize>)` with a valid topological order if the graph is a
-/// DAG, or `None` if the graph contains a cycle (cycle detection:
-/// any vertex not visited by the algorithm at the end indicates one).
-pub fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
+/// `graph[u]` is the list of outgoing neighbours of `u`.
+///
+/// # Panics
+/// Panics if the graph contains a cycle (use [`is_acyclic`] to check first).
+pub fn topological_sort(graph: &[Vec<usize>]) -> Vec<usize> {
+    let order = kahn(graph);
+    assert_eq!(order.len(), graph.len(), "the graph contains a cycle");
+    order
+}
+
+/// Whether the directed graph `graph` has no cycle.
+pub fn is_acyclic(graph: &[Vec<usize>]) -> bool {
+    kahn(graph).len() == graph.len()
+}
+
+/// Kahn's algorithm: the vertices it manages to remove, in order. Fewer than `n` of them
+/// means a cycle.
+fn kahn(graph: &[Vec<usize>]) -> Vec<usize> {
     let n = graph.len();
     let mut indeg: Vec<usize> = vec![0; n];
     for u in 0..n {
@@ -42,9 +55,5 @@ pub fn topological_sort(graph: &[Vec<usize>]) -> Option<Vec<usize>> {
             }
         }
     }
-    if order.len() == n {
-        Some(order)
-    } else {
-        None
-    }
+    order
 }

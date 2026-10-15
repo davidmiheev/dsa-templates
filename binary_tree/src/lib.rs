@@ -45,14 +45,25 @@ impl<T: Clone> BinaryTree<T> {
         self.data[idx] = Some(value);
     }
 
-    /// Read the value at index `idx`.
+    /// Whether a value has been written at index `idx`.
     ///
     /// # Panics
     ///
     /// Panics if `idx == 0` or `idx >= data.len()`.
-    pub fn get(&self, idx: usize) -> Option<&T> {
+    pub fn is_set(&self, idx: usize) -> bool {
         assert!(idx > 0 && idx < self.data.len(), "index out of range");
-        self.data[idx].as_ref()
+        self.data[idx].is_some()
+    }
+
+    /// Read the value at index `idx`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx == 0`, `idx >= data.len()`, or no value was written there
+    /// (check with [`is_set`](Self::is_set)).
+    pub fn get(&self, idx: usize) -> &T {
+        assert!(idx > 0 && idx < self.data.len(), "index out of range");
+        self.data[idx].as_ref().expect("no value at this index")
     }
 
     /// In-order traversal (left, root, right) of the nodes at `1..=n`.

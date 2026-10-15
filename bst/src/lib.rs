@@ -108,21 +108,32 @@ impl Bst {
         out
     }
 
-    /// Return the smallest key, or `None` for an empty tree.
-    pub fn min(&self) -> Option<i64> {
-        let mut node = self.root.as_deref()?;
+    /// Whether the tree holds no key.
+    pub fn is_empty(&self) -> bool {
+        self.root.is_none()
+    }
+
+    /// Return the smallest key.
+    ///
+    /// # Panics
+    /// Panics if the tree is empty.
+    pub fn min(&self) -> i64 {
+        let mut node = self.root.as_deref().expect("min() of an empty tree");
         while let Some(left) = node.left.as_deref() {
             node = left;
         }
-        Some(node.key)
+        node.key
     }
 
-    /// Return the largest key, or `None` for an empty tree.
-    pub fn max(&self) -> Option<i64> {
-        let mut node = self.root.as_deref()?;
+    /// Return the largest key.
+    ///
+    /// # Panics
+    /// Panics if the tree is empty.
+    pub fn max(&self) -> i64 {
+        let mut node = self.root.as_deref().expect("max() of an empty tree");
         while let Some(right) = node.right.as_deref() {
             node = right;
         }
-        Some(node.key)
+        node.key
     }
 }

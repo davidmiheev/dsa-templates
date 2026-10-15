@@ -20,8 +20,7 @@ pub fn run() {
         .join(" ");
 
     let contains_4 = tree.contains(4);
-    let min = tree.min().map(|k| k.to_string()).unwrap_or_default();
-    let max = tree.max().map(|k| k.to_string()).unwrap_or_default();
+    let (min, max) = (tree.min(), tree.max());
 
     println!("{}", sorted);
     println!("{} {} {} {}", added, contains_4, min, max);
@@ -66,12 +65,12 @@ mod tests {
     #[test]
     fn min_and_max_track_extrema() {
         let mut tree = Bst::new();
-        assert_eq!(tree.min(), None);
+        assert!(tree.is_empty());
         for k in [5, 3, 7, 1, 4, 6, 8] {
             tree.insert(k);
         }
-        assert_eq!(tree.min(), Some(1));
-        assert_eq!(tree.max(), Some(8));
+        assert_eq!(tree.min(), 1);
+        assert_eq!(tree.max(), 8);
     }
 
     #[test]

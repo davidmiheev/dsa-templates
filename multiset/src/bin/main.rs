@@ -12,13 +12,8 @@ pub fn run() {
     println!("Multiset: {:?}", ms);
     println!("Count of 2: {}", ms.count(&2));
 
-    if let Some(first) = ms.first() {
-        println!("First element: {}", first);
-    }
-
-    if let Some(last) = ms.last() {
-        println!("Last element: {}", last);
-    }
+    println!("First element: {}", ms.first());
+    println!("Last element: {}", ms.last());
 
     ms.remove(&2);
     println!("After removing one occurrence of 2: {:?}", ms);
@@ -26,13 +21,8 @@ pub fn run() {
     ms.remove_all(&4);
     println!("After removing all occurrences of 4: {:?}", ms);
 
-    if let Some(first) = ms.first() {
-        println!("First element: {}", first);
-    }
-
-    if let Some(last) = ms.last() {
-        println!("Last element: {}", last);
-    }
+    println!("First element: {}", ms.first());
+    println!("Last element: {}", ms.last());
 }
 
 fn main() {
@@ -65,8 +55,8 @@ mod tests {
     #[test]
     fn first_last_len() {
         let ms = MultiSet::from_iter(vec![3, 1, 4, 1, 5, 9, 2, 6]);
-        assert_eq!(ms.first(), Some(1));
-        assert_eq!(ms.last(), Some(9));
+        assert_eq!(ms.first(), 1);
+        assert_eq!(ms.last(), 9);
         assert_eq!(ms.len(), 8);
         assert!(!ms.is_empty());
     }
