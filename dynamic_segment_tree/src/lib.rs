@@ -108,7 +108,8 @@ impl<M: Monoid> DynamicSegmentTree<M> {
     pub fn set(&mut self, i: usize, x: M::S) {
         assert!(i < self.n, "index {i} out of range for length {}", self.n);
         // Walk down, creating missing nodes, remembering the path.
-        let mut path: Vec<u32> = Vec::with_capacity(self.bits as usize + 1);
+        let mut path = [NIL; 33];
+        let mut depth = 0;
         let mut u = self.root;
         let mut slot_is_root = true;
         let mut parent = NIL;
@@ -126,7 +127,8 @@ impl<M: Monoid> DynamicSegmentTree<M> {
                     self.nodes[parent as usize].left = u;
                 }
             }
-            path.push(u);
+            path[depth] = u;
+            depth += 1;
             if level == 0 {
                 break;
             }
@@ -135,10 +137,10 @@ impl<M: Monoid> DynamicSegmentTree<M> {
             went_right = (i >> (level - 1)) & 1 == 1;
             u = if went_right { self.nodes[u as usize].right } else { self.nodes[u as usize].left };
         }
-        let leaf = *path.last().unwrap() as usize;
+        let leaf = path[depth - 1] as usize;
         self.nodes[leaf].agg = x;
         for level in 1..=self.bits as usize {
-            let u = path[path.len() - 1 - level] as usize;
+            let u = path[depth - 1 - level] as usize;
             let (l, r) = (self.nodes[u].left, self.nodes[u].right);
             let agg = M::op(self.agg_of(l, level as u32 - 1), self.agg_of(r, level as u32 - 1));
             self.nodes[u].agg = agg;
