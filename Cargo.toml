@@ -34,6 +34,7 @@ members = [
     "persistent_lazy_segment_tree",
     "dynamic_segment_tree",
     "point_set_range_frequency",
+    "segment_tree_beats",
 ]
 
 [workspace.package]
