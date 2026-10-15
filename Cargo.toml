@@ -51,6 +51,7 @@ members = [
     "min_span_tree",
     "cycle_detection",
     "eulerian_trail",
+    "matching",
 ]
 
 [workspace.package]

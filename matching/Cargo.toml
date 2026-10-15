@@ -1,0 +1,13 @@
+[package]
+name = "matching"
+version = "0.1.0"
+edition = "2021"
+description = "Maximum matchings: Hopcroft-Karp (bipartite), Edmonds' blossom (general), Hungarian (assignment)."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "matching"
+path = "src/lib.rs"
