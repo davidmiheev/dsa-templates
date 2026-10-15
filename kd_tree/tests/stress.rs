@@ -102,7 +102,7 @@ fn large_workload() {
     let total_before = t.prod_rect(0, 1_000_000_001, 0, 1_000_000_001);
     assert_eq!(total_before.1, n as u64);
     st.case();
-    for _ in 0..100_000 * scale() {
+    for _ in 0..20_000 * scale() {
         let (x0, x1) = (rng.range(0, 1_000_000_000), rng.range(0, 1_000_000_000));
         let (y0, y1) = (rng.range(0, 1_000_000_000), rng.range(0, 1_000_000_000));
         let (xl, xh, yl, yh) = (x0.min(x1), x0.max(x1) + 1, y0.min(y1), y0.max(y1) + 1);

@@ -132,8 +132,8 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         let mid = (lo + hi) / 2;
         self.nodes[mid].bbox = (xl, xh, yl, yh);
         if hi - lo <= LEAF {
-            for p in lo..hi {
-                let i = order[p] as usize;
+            for (p, &i) in (lo..hi).zip(&order[lo..hi]) {
+                let i = i as usize;
                 self.pos[i] = p as u32;
                 self.pts[p] = points[i];
                 self.vals[p] = values[i].clone();
@@ -145,7 +145,7 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         // of `log2(size)` flips). Splitting on the larger *spread* instead is tempting, but
         // skewed inputs (one axis with few distinct values) then produce boxes that are thin
         // in one dimension and long in the other, and rectangle queries degrade to `O(n)`.
-        if (hi - lo).ilog2() % 2 == 0 {
+        if (hi - lo).ilog2() & 1 == 0 {
             slice.select_nth_unstable_by_key(mid - lo, |&i| points[i as usize].0);
         } else {
             slice.select_nth_unstable_by_key(mid - lo, |&i| points[i as usize].1);
