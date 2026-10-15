@@ -22,6 +22,8 @@ members = [
     "heavy_light_decomposition",
     "centroid_decomposition",
     "suffix_automaton",
+    "algebra",
+    "lazy_segment_tree",
 ]
 
 [workspace.package]
