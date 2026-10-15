@@ -1,0 +1,13 @@
+[package]
+name = "st_numbering"
+version = "0.1.0"
+edition = "2021"
+description = "st-numbering of a biconnected graph (Tarjan's lowpoint algorithm, iterative)."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "st_numbering"
+path = "src/lib.rs"

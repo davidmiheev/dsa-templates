@@ -52,6 +52,13 @@ members = [
     "cycle_detection",
     "eulerian_trail",
     "matching",
+    "dominator_tree",
+    "directed_mst",
+    "complement_graph",
+    "chordal_graph",
+    "three_edge_cc",
+    "st_numbering",
+    "subgraph_counting",
 ]
 
 [workspace.package]

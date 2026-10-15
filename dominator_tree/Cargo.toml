@@ -1,0 +1,13 @@
+[package]
+name = "dominator_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Dominator tree of a directed graph (Lengauer-Tarjan, iterative)."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "dominator_tree"
+path = "src/lib.rs"

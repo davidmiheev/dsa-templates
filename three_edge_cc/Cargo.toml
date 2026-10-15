@@ -1,0 +1,13 @@
+[package]
+name = "three_edge_cc"
+version = "0.1.0"
+edition = "2021"
+description = "3-edge-connected components via cycle-space hashing on a DFS tree."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "three_edge_cc"
+path = "src/lib.rs"
