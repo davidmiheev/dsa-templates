@@ -1,0 +1,15 @@
+[package]
+name = "spanning_count"
+version = "0.1.0"
+edition = "2021"
+description = "Counting spanning trees / arborescences (matrix-tree theorem) and Eulerian circuits (BEST theorem) modulo a prime."
+publish = false
+
+[dependencies]
+modint = { path = "../modint" }
+modmatrix = { path = "../modmatrix" }
+union_find = { path = "../union_find" }
+
+[lib]
+name = "spanning_count"
+path = "src/lib.rs"

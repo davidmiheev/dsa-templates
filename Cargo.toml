@@ -59,6 +59,9 @@ members = [
     "three_edge_cc",
     "st_numbering",
     "subgraph_counting",
+    "modint",
+    "modmatrix",
+    "spanning_count",
 ]
 
 [workspace.package]
