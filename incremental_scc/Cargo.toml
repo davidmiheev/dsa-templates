@@ -1,0 +1,13 @@
+[package]
+name = "incremental_scc"
+version = "0.1.0"
+edition = "2021"
+description = "Incremental strongly connected components: the time every edge becomes part of an SCC."
+publish = false
+
+[dependencies]
+scc = { path = "../scc" }
+
+[lib]
+name = "incremental_scc"
+path = "src/lib.rs"

@@ -66,6 +66,12 @@ members = [
     "independent_set",
     "steiner_tree",
     "edge_coloring",
+    "hash_map",
+    "tree_decomposition",
+    "offline_connectivity",
+    "incremental_scc",
+    "incremental_msf",
+    "graph_center",
 ]
 
 [workspace.package]
