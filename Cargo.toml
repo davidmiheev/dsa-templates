@@ -43,6 +43,7 @@ members = [
     "link_cut_tree",
     "convolution",
     "euler_tour_tree",
+    "tree_path_affine_sum",
 ]
 
 [workspace.package]
