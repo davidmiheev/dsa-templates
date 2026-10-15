@@ -6,6 +6,9 @@
 //! tree over that list. Everything lives in a few flat arrays: `O(n log n)` memory for `n`
 //! declared points, `O(log^2 n)` per update and query, no hashing.
 //!
+//! This is the *online* tool (queries may depend on earlier answers). When every update and
+//! query is known in advance, [`dominance_sums`](crate::dominance_sums) is several times faster.
+//!
 //! # Example
 //!
 //! ```
@@ -27,25 +30,37 @@ use std::ops::{AddAssign, Sub};
 pub struct Fenwick2D<X, Y, T> {
     /// Sorted distinct x coordinates.
     xs: Vec<X>,
-    /// Outer node `j` (1-based) owns `ys[start[j]..start[j + 1]]` (sorted) and the same range of
-    /// `tree`, where it keeps an inner Fenwick tree (1-based inside the range).
+    /// Sorted distinct y coordinates; the node lists below store ranks into this array.
+    all_ys: Vec<Y>,
+    /// Outer node `j` (1-based) owns `ranks[start[j]..start[j + 1]]` (sorted) and the same range
+    /// of `tree`, where it keeps an inner Fenwick tree (1-based inside the range).
     start: Vec<usize>,
-    ys: Vec<Y>,
+    ranks: Vec<u32>,
     tree: Vec<T>,
 }
 
 impl<X: Ord + Copy, Y: Ord + Copy, T: Copy + Default + AddAssign + Sub<Output = T>> Fenwick2D<X, Y, T> {
     /// A tree of zeros that can be updated at the given cells (duplicates are fine).
+    ///
+    /// # Panics
+    /// Panics if there are `2^32` or more points.
     pub fn new(points: &[(X, Y)]) -> Self {
+        assert!(points.len() < u32::MAX as usize, "too many points");
         let mut xs: Vec<X> = points.iter().map(|p| p.0).collect();
         xs.sort_unstable();
         xs.dedup();
+        let mut all_ys: Vec<Y> = points.iter().map(|p| p.1).collect();
+        all_ys.sort_unstable();
+        all_ys.dedup();
         let m = xs.len();
-        let mut by_y: Vec<(Y, usize)> = points.iter().map(|&(x, y)| (y, xs.partition_point(|v| *v < x) + 1)).collect();
-        by_y.sort_unstable_by_key(|p| p.0);
-        by_y.dedup_by(|a, b| a.0 == b.0 && a.1 == b.1);
+        let mut cells: Vec<(u32, usize)> = points
+            .iter()
+            .map(|&(x, y)| (all_ys.partition_point(|v| *v < y) as u32, xs.partition_point(|v| *v < x) + 1))
+            .collect();
+        cells.sort_unstable();
+        cells.dedup();
         let mut start = vec![0usize; m + 2];
-        for &(_, xi) in &by_y {
+        for &(_, xi) in &cells {
             let mut j = xi;
             while j <= m {
                 start[j + 1] += 1;
@@ -56,21 +71,18 @@ impl<X: Ord + Copy, Y: Ord + Copy, T: Copy + Default + AddAssign + Sub<Output = 
             start[j] += start[j - 1];
         }
         let total = start[m + 1];
-        // Filling in increasing y keeps every node's list sorted.
+        // Filling in increasing rank keeps every node's list sorted.
         let mut fill = start.clone();
-        let mut ys = Vec::with_capacity(total);
-        if let Some(&(y0, _)) = by_y.first() {
-            ys.resize(total, y0);
-        }
-        for &(y, xi) in &by_y {
+        let mut ranks = vec![0u32; total];
+        for &(r, xi) in &cells {
             let mut j = xi;
             while j <= m {
-                ys[fill[j]] = y;
+                ranks[fill[j]] = r;
                 fill[j] += 1;
                 j += j & j.wrapping_neg();
             }
         }
-        Fenwick2D { xs, start, ys, tree: vec![T::default(); total] }
+        Fenwick2D { xs, all_ys, start, ranks, tree: vec![T::default(); total] }
     }
 
     /// Add `delta` at the cell `(x, y)`.
@@ -80,11 +92,12 @@ impl<X: Ord + Copy, Y: Ord + Copy, T: Copy + Default + AddAssign + Sub<Output = 
     pub fn add(&mut self, x: X, y: Y, delta: T) {
         let m = self.xs.len();
         let xi = self.xs.binary_search(&x).expect("cell was not declared in `new`") + 1;
+        let r = self.all_ys.binary_search(&y).expect("cell was not declared in `new`") as u32;
         let mut j = xi;
         while j <= m {
             let (lo, hi) = (self.start[j], self.start[j + 1]);
-            let k = self.ys[lo..hi].partition_point(|v| *v < y);
-            assert!(k < hi - lo && self.ys[lo + k] == y, "cell was not declared in `new`");
+            let k = self.ranks[lo..hi].partition_point(|v| *v < r);
+            assert!(k < hi - lo && self.ranks[lo + k] == r, "cell was not declared in `new`");
             let mut i = k + 1;
             while i <= hi - lo {
                 self.tree[lo + i - 1] += delta;
@@ -94,17 +107,25 @@ impl<X: Ord + Copy, Y: Ord + Copy, T: Copy + Default + AddAssign + Sub<Output = 
         }
     }
 
+    /// Sum of the inner prefix `[0, count)` of node `j`'s list restricted to ranks `< r`.
+    fn node_prefix(&self, j: usize, r: u32) -> T {
+        let (lo, hi) = (self.start[j], self.start[j + 1]);
+        let mut i = self.ranks[lo..hi].partition_point(|v| *v < r);
+        let mut sum = T::default();
+        while i > 0 {
+            sum += self.tree[lo + i - 1];
+            i &= i - 1;
+        }
+        sum
+    }
+
     /// The sum over all cells with `cx < x` and `cy < y`.
     pub fn prefix(&self, x: X, y: Y) -> T {
         let mut j = self.xs.partition_point(|v| *v < x);
+        let r = self.all_ys.partition_point(|v| *v < y) as u32;
         let mut sum = T::default();
         while j > 0 {
-            let (lo, hi) = (self.start[j], self.start[j + 1]);
-            let mut i = self.ys[lo..hi].partition_point(|v| *v < y);
-            while i > 0 {
-                sum += self.tree[lo + i - 1];
-                i &= i - 1;
-            }
+            sum += self.node_prefix(j, r);
             j &= j - 1;
         }
         sum
@@ -116,6 +137,19 @@ impl<X: Ord + Copy, Y: Ord + Copy, T: Copy + Default + AddAssign + Sub<Output = 
         if x_lo >= x_hi || y_lo >= y_hi {
             return T::default();
         }
-        (self.prefix(x_hi, y_hi) - self.prefix(x_lo, y_hi)) - (self.prefix(x_hi, y_lo) - self.prefix(x_lo, y_lo))
+        let (mut hi, mut lo) = (self.xs.partition_point(|v| *v < x_hi), self.xs.partition_point(|v| *v < x_lo));
+        let (r_lo, r_hi) = (self.all_ys.partition_point(|v| *v < y_lo) as u32, self.all_ys.partition_point(|v| *v < y_hi) as u32);
+        let mut sum = T::default();
+        // The Fenwick paths of `hi` and `lo` end in a common tail that cancels out.
+        while hi > lo {
+            sum += self.node_prefix(hi, r_hi) - self.node_prefix(hi, r_lo);
+            hi &= hi - 1;
+        }
+        while lo > hi {
+            let part = self.node_prefix(lo, r_hi) - self.node_prefix(lo, r_lo);
+            sum = sum - part;
+            lo &= lo - 1;
+        }
+        sum
     }
 }

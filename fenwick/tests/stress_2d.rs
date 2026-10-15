@@ -65,3 +65,62 @@ fn panics_on_undeclared_cell() {
     let e = Fenwick2D::<u8, u8, i32>::new(&[]);
     assert_eq!((e.prefix(5, 5), e.rect(0, 9, 0, 9)), (0, 0));
 }
+
+#[test]
+fn dominance_sums_match_naive() {
+    use fenwick::{dominance_sums, Event};
+    let mut st = Stress::new("fenwick/dominance");
+    for case in 0..500 * scale() {
+        let mut rng = Rng::new(case as u64 + 1000);
+        let c = rng.range(1, 10);
+        let events: Vec<Event<i64, i64, i64>> = (0..rng.range(0, 60))
+            .map(|_| {
+                let (x, y) = (rng.range(-c, c), rng.range(-c, c));
+                if rng.chance(1, 2) { Event::Add { x, y, w: rng.range(-9, 9) } } else { Event::Query { x, y } }
+            })
+            .collect();
+        let mut want = Vec::new();
+        for (t, e) in events.iter().enumerate() {
+            if let Event::Query { x, y } = *e {
+                let s: i64 = events[..t]
+                    .iter()
+                    .filter_map(|p| match *p {
+                        Event::Add { x: px, y: py, w } if px < x && py < y => Some(w),
+                        _ => None,
+                    })
+                    .sum();
+                want.push(s);
+            }
+        }
+        st.case();
+        assert_eq!(dominance_sums(&events), want, "case {case}");
+        st.ops(events.len());
+    }
+    st.done();
+}
+
+#[test]
+fn dominance_sums_large() {
+    use fenwick::{dominance_sums, Event};
+    let mut st = Stress::new("fenwick/dominance-large");
+    let mut rng = Rng::new(5);
+    let n = 400_000 * scale();
+    let events: Vec<Event<i64, i64, i64>> = (0..n)
+        .map(|_| {
+            let (x, y) = (rng.range(0, 1_000_000_000), rng.range(0, 1_000_000_000));
+            if rng.chance(1, 2) { Event::Add { x, y, w: 1 } } else { Event::Query { x, y } }
+        })
+        .collect();
+    st.case();
+    let ans = dominance_sums(&events);
+    // Spot-check a few answers against a direct scan.
+    let queries: Vec<usize> = (0..n).filter(|&t| matches!(events[t], Event::Query { .. })).collect();
+    for k in (0..queries.len()).step_by(queries.len() / 20 + 1) {
+        let t = queries[k];
+        let Event::Query { x, y } = events[t] else { unreachable!() };
+        let want = events[..t].iter().filter(|e| matches!(**e, Event::Add { x: px, y: py, .. } if px < x && py < y)).count() as i64;
+        assert_eq!(ans[k], want, "query #{k}");
+    }
+    st.ops(n);
+    st.done();
+}
