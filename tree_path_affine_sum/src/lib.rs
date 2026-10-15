@@ -144,12 +144,12 @@ impl<const MOD: u64> TreePathAffineSum<MOD> {
         // Heavy child: the child that follows its parent in the preorder, if it is on its chain.
         let mut heavy = vec![NONE; n];
         let mut chain_end = vec![0usize; n];
-        for v in 0..n {
+        for (v, h) in heavy.iter_mut().enumerate() {
             let p = hld.pos[v];
             if p + 1 < n {
                 let w = hld.order[p + 1];
                 if hld.parent[w] == v && hld.head[w] == hld.head[v] {
-                    heavy[v] = w;
+                    *h = w;
                 }
             }
         }
