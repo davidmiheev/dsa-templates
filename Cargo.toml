@@ -28,6 +28,7 @@ members = [
     "binary_trie",
     "fast_set",
     "queue_aggregation",
+    "wavelet_matrix",
 ]
 
 [workspace.package]

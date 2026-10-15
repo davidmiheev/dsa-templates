@@ -134,11 +134,16 @@ where
             self.insert(node, lo, hi, line);
             return;
         }
+        // Only descend (and allocate) where the range actually reaches.
         let mid = lo + (hi - lo) / 2;
-        let left = self.child(node, false);
-        self.add_to_range(left, lo, mid, l, r, line);
-        let right = self.child(node, true);
-        self.add_to_range(right, mid + 1, hi, l, r, line);
+        if l <= mid {
+            let left = self.child(node, false);
+            self.add_to_range(left, lo, mid, l, r, line);
+        }
+        if r > mid {
+            let right = self.child(node, true);
+            self.add_to_range(right, mid + 1, hi, l, r, line);
+        }
     }
 
     /// The minimum over all lines covering `x`, or the `empty` value if there is none.
