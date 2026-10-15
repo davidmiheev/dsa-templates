@@ -15,6 +15,11 @@
 //! array has zero size and all character work compiles away, giving a classic DSU with
 //! [`UnionFind::merge`].
 //!
+//! Variants for harder problems live in the same crate:
+//! [`PotentialUnionFind`] (relations in an arbitrary group),
+//! [`RollbackUnionFind`] (undo, for offline version trees), and
+//! [`RangeParallelUnionFind`] (`a + i ~ b + i` for a whole range in `O(log n)` amortized).
+//!
 //! # Example
 //!
 //! ```
@@ -24,6 +29,14 @@
 //! assert!(uf.are_connected(1, 2) && !uf.are_connected(1, 3));
 //! assert_eq!(uf.get_size(1), 2);
 //! ```
+
+mod potential;
+mod range_parallel;
+mod rollback;
+
+pub use potential::PotentialUnionFind;
+pub use range_parallel::RangeParallelUnionFind;
+pub use rollback::RollbackUnionFind;
 
 /// Union-Find with per-component character values of type `C`.
 pub struct UnionFind<C, F> {
