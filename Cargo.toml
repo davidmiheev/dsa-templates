@@ -38,6 +38,7 @@ members = [
     "linear_add_range_min",
     "kd_tree",
     "range_sort_sequence",
+    "seaweed",
 ]
 
 [workspace.package]
