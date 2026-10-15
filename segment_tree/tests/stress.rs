@@ -38,8 +38,9 @@ const OPS: [(&str, Op, i64); 5] = [
     ("first_nonzero", first_nonzero, 0),
 ];
 
+/// Left-to-right fold over `[l, r)`.
 fn fold(model: &[i64], l: usize, r: usize, op: Op, id: i64) -> i64 {
-    model[l..=r].iter().fold(id, |acc, &x| op(acc, x))
+    model[l..r].iter().fold(id, |acc, &x| op(acc, x))
 }
 
 #[test]
@@ -60,8 +61,8 @@ fn matches_naive_fold() {
                 model[i] = v;
                 tree.update(i, v);
             } else {
-                let l = rng.below(n);
-                let r = l + rng.below(n - l);
+                let l = rng.below(n + 1);
+                let r = l + rng.below(n + 1 - l); // empty ranges (l == r) included
                 assert_eq!(
                     tree.query(l, r),
                     fold(&model, l, r, op, id),
@@ -71,9 +72,11 @@ fn matches_naive_fold() {
             st.ops(1);
         }
         // Whole-array and single-element queries.
-        assert_eq!(tree.query(0, n - 1), fold(&model, 0, n - 1, op, id), "{name} full case {case}");
+        assert_eq!(tree.query(0, n), fold(&model, 0, n, op, id), "{name} full case {case}");
+        assert_eq!(tree.all_prod(), fold(&model, 0, n, op, id), "{name} all_prod case {case}");
         for i in 0..n {
-            assert_eq!(tree.query(i, i), model[i], "{name} point case {case}");
+            assert_eq!(tree.query(i, i + 1), model[i], "{name} point case {case}");
+            assert_eq!(tree.get(i), model[i], "{name} get case {case}");
         }
         st.ops(n + 1);
     }
@@ -99,12 +102,26 @@ fn large_random_ranges() {
             sum_tree.update(i, v);
         } else {
             let l = rng.below(n);
-            let r = (l + rng.below(300)).min(n - 1); // short ranges keep the naive fold cheap
+            let r = (l + 1 + rng.below(300)).min(n); // short ranges keep the naive fold cheap
             assert_eq!(tree.query(l, r), fold(&model, l, r, max, i64::MIN));
             assert_eq!(sum_tree.query(l, r), fold(&model, l, r, sum, 0));
-            assert_eq!(sum_tree.query(0, n - 1), total);
+            assert_eq!(sum_tree.all_prod(), total);
         }
         st.ops(1);
     }
     st.done();
+}
+
+#[test]
+fn empty_tree_and_invalid_ranges() {
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    let empty = SegmentTree::new(&[] as &[i64], 0, sum);
+    assert!(empty.is_empty());
+    assert_eq!((empty.len(), empty.all_prod(), empty.query(0, 0)), (0, 0, 0));
+    assert!(catch_unwind(AssertUnwindSafe(|| empty.get(0))).is_err());
+    let mut t = SegmentTree::new(&[1, 2, 3], 0, sum);
+    assert!(catch_unwind(AssertUnwindSafe(|| t.query(2, 1))).is_err());
+    assert!(catch_unwind(AssertUnwindSafe(|| t.query(0, 4))).is_err());
+    assert!(catch_unwind(AssertUnwindSafe(|| t.get(3))).is_err());
+    assert!(catch_unwind(AssertUnwindSafe(|| t.update(3, 0))).is_err());
 }
