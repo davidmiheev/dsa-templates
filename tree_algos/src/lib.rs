@@ -3,6 +3,7 @@
 //! * [`cartesian_tree`]: the min-rooted Cartesian tree of a sequence in `O(n)`.
 //! * [`tree_diameter`]: weighted diameter and one longest path in `O(n)`.
 //! * [`rooted_isomorphism_classes`]: classes of isomorphic rooted subtrees in `O(n log n)`.
+//! * [`min_inversion_order`]: tree-ordered schedule minimizing `sum c_i d_j` over pairs `j` before `i`.
 //! * [`rerooting`]: the answer of a tree DP for *every* choice of root in `O(n)` merges.
 //!
 //! Parent arrays use [`NONE`] as the parent of a root.
@@ -17,7 +18,8 @@
 //! assert_eq!((len, path.len()), (12, 3)); // 0 - 1 - 3
 //! ```
 
-use std::collections::HashMap;
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap};
 use std::ops::Add;
 
 /// The parent of a root.
@@ -267,4 +269,128 @@ where
         }
     }
     ans.into_iter().map(|a| a.expect("every vertex is reached")).collect()
+}
+
+/// An order of the vertices of a rooted tree in which every vertex comes after its parent, that
+/// minimizes `sum over pairs (j before i) of c[order[i]] * d[order[j]]` (a precedence-constrained
+/// single-machine scheduling problem). Returns the order and the minimum cost.
+///
+/// `parent[v]` is the parent of `v` (`NONE` for the root `root`); `c`, `d` are non-negative and
+/// their products must fit in `u128` sums (the cost itself is returned as `u128`).
+///
+/// Greedy (Horn / Adolphson-Hu): repeatedly take the non-root group with the smallest
+/// `D / C` ratio and append it to its parent's group, where `C`, `D` are sums over the group.
+/// `O(n log n)`.
+///
+/// ```
+/// use tree_algos::{min_inversion_order, NONE};
+/// // 0 is the root of 1 and 2. Vertex 2 has a small d / c ratio, so it goes first:
+/// // cost = c[2] * d[0] + c[1] * (d[0] + d[2]) = 0 + 1 * 1.
+/// let (order, cost) = min_inversion_order(&[NONE, 0, 0], 0, &[1, 1, 5], &[0, 10, 1]);
+/// assert_eq!(order, vec![0, 2, 1]);
+/// assert_eq!(cost, 1);
+/// ```
+///
+/// # Panics
+/// Panics if the parent array does not describe a tree rooted at `root`, or the slices differ in
+/// length.
+pub fn min_inversion_order(parent: &[usize], root: usize, c: &[u64], d: &[u64]) -> (Vec<usize>, u128) {
+    let n = parent.len();
+    assert!(c.len() == n && d.len() == n, "c and d need one entry per vertex");
+    assert!(root < n, "root out of range");
+    // A group is identified by its top vertex. `ds`/`cs` hold group sums; the sequences are
+    // singly linked lists (`next`) with head = the top vertex and a tail pointer.
+    let mut cs: Vec<u128> = c.iter().map(|&x| x as u128).collect();
+    let mut ds: Vec<u128> = d.iter().map(|&x| x as u128).collect();
+    let mut tail: Vec<usize> = (0..n).collect();
+    let mut next = vec![NONE; n];
+    let mut dsu: Vec<usize> = (0..n).collect(); // group top reachable by find()
+    fn find(dsu: &mut [usize], mut x: usize) -> usize {
+        let mut r = x;
+        while dsu[r] != r {
+            r = dsu[r];
+        }
+        while dsu[x] != r {
+            let nx = dsu[x];
+            dsu[x] = r;
+            x = nx;
+        }
+        r
+    }
+    // Min-heap on D / C (cross-multiplied), stale entries skipped by comparing sums.
+    #[derive(Clone, Copy)]
+    struct Entry {
+        d: u128,
+        c: u128,
+        v: usize,
+    }
+    impl PartialEq for Entry {
+        fn eq(&self, o: &Self) -> bool {
+            self.cmp(o) == Ordering::Equal
+        }
+    }
+    impl Eq for Entry {}
+    impl PartialOrd for Entry {
+        fn partial_cmp(&self, o: &Self) -> Option<Ordering> {
+            Some(self.cmp(o))
+        }
+    }
+    impl Ord for Entry {
+        // BinaryHeap is a max-heap: the "greatest" entry has the smallest d / c. A group with
+        // c == 0 and d == 0 is neutral and goes first; c == 0 with d > 0 has ratio infinity.
+        fn cmp(&self, o: &Self) -> Ordering {
+            let neutral = |e: &Entry| e.c == 0 && e.d == 0;
+            match (neutral(self), neutral(o)) {
+                (true, true) => return o.v.cmp(&self.v),
+                (true, false) => return Ordering::Greater,
+                (false, true) => return Ordering::Less,
+                _ => {}
+            }
+            // self is greater when self.d / self.c < o.d / o.c, i.e. self.d * o.c < o.d * self.c.
+            (o.d * self.c).cmp(&(self.d * o.c)).then(o.v.cmp(&self.v))
+        }
+    }
+    let mut heap: BinaryHeap<Entry> = BinaryHeap::new();
+    let mut seen_root = false;
+    for v in 0..n {
+        if v == root {
+            assert!(parent[v] == NONE, "the root must have parent NONE");
+            seen_root = true;
+        } else {
+            assert!(parent[v] < n, "parent out of range");
+            heap.push(Entry { d: ds[v], c: cs[v], v });
+        }
+    }
+    assert!(seen_root);
+    let mut merged = 0;
+    while let Some(e) = heap.pop() {
+        if dsu[e.v] != e.v || ds[e.v] != e.d || cs[e.v] != e.c {
+            continue; // stale
+        }
+        let p = find(&mut dsu, parent[e.v]);
+        assert!(p != e.v, "the parent array contains a cycle");
+        // Append the group of e.v behind the group of p.
+        next[tail[p]] = e.v;
+        tail[p] = tail[e.v];
+        ds[p] += ds[e.v];
+        cs[p] += cs[e.v];
+        dsu[e.v] = p;
+        merged += 1;
+        if p != root {
+            heap.push(Entry { d: ds[p], c: cs[p], v: p });
+        }
+    }
+    assert_eq!(merged, n - 1, "the parent array does not describe a tree rooted at {root}");
+    let mut order = Vec::with_capacity(n);
+    let mut v = root;
+    while v != NONE {
+        order.push(v);
+        v = next[v];
+    }
+    let (mut sum_d, mut cost) = (0u128, 0u128);
+    for &v in &order {
+        cost += c[v] as u128 * sum_d;
+        sum_d += d[v] as u128;
+    }
+    (order, cost)
 }

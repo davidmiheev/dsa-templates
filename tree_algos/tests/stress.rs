@@ -261,3 +261,81 @@ mod reroot {
         assert_eq!((ecc[0], ecc[1]), (1, 2));
     }
 }
+
+mod schedule {
+    use super::*;
+    use tree_algos::min_inversion_order;
+
+    fn cost(order: &[usize], c: &[u64], d: &[u64]) -> u128 {
+        let (mut sd, mut x) = (0u128, 0u128);
+        for &v in order {
+            x += c[v] as u128 * sd;
+            sd += d[v] as u128;
+        }
+        x
+    }
+
+    /// Minimum cost over all orders with parents before children (enumerated).
+    fn brute(parent: &[usize], c: &[u64], d: &[u64]) -> u128 {
+        fn rec(parent: &[usize], placed: &mut Vec<bool>, order: &mut Vec<usize>, c: &[u64], d: &[u64], best: &mut u128) {
+            let n = parent.len();
+            if order.len() == n {
+                *best = (*best).min(cost(order, c, d));
+                return;
+            }
+            for v in 0..n {
+                if !placed[v] && (parent[v] == NONE || placed[parent[v]]) {
+                    placed[v] = true;
+                    order.push(v);
+                    rec(parent, placed, order, c, d, best);
+                    order.pop();
+                    placed[v] = false;
+                }
+            }
+        }
+        let mut best = u128::MAX;
+        rec(parent, &mut vec![false; parent.len()], &mut vec![], c, d, &mut best);
+        best
+    }
+
+    #[test]
+    fn matches_exhaustive_search() {
+        let mut st = Stress::new("tree_algos/schedule");
+        for case in 0..1500 * scale() {
+            let mut rng = Rng::new(case as u64 + 31);
+            let n = rng.range(1, 8) as usize;
+            let amp = *[1usize, 3, 20].get(case % 3).unwrap();
+            let mut parent: Vec<usize> = vec![NONE; n];
+            for i in 1..n {
+                parent[i] = rng.below(i);
+            }
+            let (c, d): (Vec<u64>, Vec<u64>) = (0..n).map(|_| (rng.below(amp + 1) as u64, rng.below(amp + 1) as u64)).unzip();
+            let (order, got) = min_inversion_order(&parent, 0, &c, &d);
+            assert_eq!(got, cost(&order, &c, &d));
+            assert_eq!(got, brute(&parent, &c, &d), "parent={parent:?} c={c:?} d={d:?}");
+            // Valid topological order.
+            let mut pos = vec![0; n];
+            for (i, &v) in order.iter().enumerate() {
+                pos[v] = i;
+            }
+            assert!((1..n).all(|v| pos[parent[v]] < pos[v]));
+            st.case();
+            st.ops(1);
+        }
+        st.done();
+    }
+
+    #[test]
+    fn large_inputs_run_fast() {
+        let n = 200_000;
+        let mut rng = Rng::new(2);
+        let parent: Vec<usize> = (0..n).map(|i| if i == 0 { NONE } else { rng.below(i) }).collect();
+        let c: Vec<u64> = (0..n).map(|_| rng.below(10_000) as u64).collect();
+        let d: Vec<u64> = (0..n).map(|_| rng.below(10_000) as u64).collect();
+        let (order, x) = min_inversion_order(&parent, 0, &c, &d);
+        assert_eq!(order.len(), n);
+        assert_eq!(x, cost(&order, &c, &d));
+        let chain: Vec<usize> = (0..n).map(|i| if i == 0 { NONE } else { i - 1 }).collect();
+        assert_eq!(min_inversion_order(&chain, 0, &c, &d).0, (0..n).collect::<Vec<_>>());
+    }
+}
