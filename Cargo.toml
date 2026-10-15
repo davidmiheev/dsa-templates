@@ -42,6 +42,7 @@ members = [
     "tree_algos",
     "link_cut_tree",
     "convolution",
+    "euler_tour_tree",
 ]
 
 [workspace.package]
