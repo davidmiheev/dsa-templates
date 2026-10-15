@@ -153,3 +153,111 @@ fn large_matches_offline_bit_reference() {
     }
     st.done();
 }
+
+#[test]
+fn rollback_mode_matches_naive() {
+    use mo_algorithm::solve_rollback;
+    // The state tracks counts and the best (count, value); the snapshot is the best pair.
+    struct Modes {
+        cnt: Vec<u32>,
+        best: (u32, usize),
+    }
+    let mut st = Stress::new("mo/rollback-mode");
+    for case in 0..500 * scale() {
+        let mut rng = Rng::new(9000 + case as u64);
+        let n = rng.range(1, 60) as usize;
+        let values = *[2usize, 5, 60].get(case % 3).unwrap();
+        let a: Vec<usize> = (0..n).map(|_| rng.below(values)).collect();
+        let q = rng.below(80);
+        let queries = random_queries(&mut rng, n, q);
+        let mut m = Modes { cnt: vec![0; values], best: (0, 0) };
+        let mut got = vec![(0u32, 0usize); queries.len()];
+        let a_ref = &a;
+        solve_rollback(
+            n,
+            &queries,
+            &mut m,
+            |m, i| {
+                m.cnt[a_ref[i]] += 1;
+                if m.cnt[a_ref[i]] > m.best.0 {
+                    m.best = (m.cnt[a_ref[i]], a_ref[i]);
+                }
+            },
+            |m, i| m.cnt[a_ref[i]] -= 1,
+            |m| m.best,
+            |m, old| m.best = old,
+            |m, qi| got[qi] = m.best,
+        );
+        for (i, q) in queries.iter().enumerate() {
+            let mut cnt = vec![0u32; values];
+            for &x in &a[q.lo..q.hi] {
+                cnt[x] += 1;
+            }
+            let max = cnt.iter().copied().max().unwrap();
+            assert_eq!(got[i].0, max, "mode count of query {i} = [{}, {}) case {case}", q.lo, q.hi);
+            if max > 0 {
+                assert_eq!(cnt[got[i].1], max, "reported value is a mode, query {i} case {case}");
+            }
+        }
+        assert!(m.cnt.iter().all(|&c| c == 0), "everything was undone, case {case}");
+        st.case();
+        st.ops(queries.len());
+    }
+    st.done();
+}
+
+#[test]
+fn range_inversions_match_naive() {
+    use mo_algorithm::range_inversions;
+    let mut st = Stress::new("mo/inversions");
+    for case in 0..800 * scale() {
+        let mut rng = Rng::new(11000 + case as u64);
+        let n = rng.range(0, 60) as usize;
+        let values = *[1usize, 3, 10, 1000].get(case % 4).unwrap();
+        let a: Vec<i64> = (0..n).map(|_| rng.below(values) as i64 - 3).collect();
+        let q = rng.below(80);
+        let queries = if n == 0 { vec![Query { lo: 0, hi: 0 }; q] } else { random_queries(&mut rng, n, q) };
+        let got = range_inversions(&a, &queries);
+        assert_eq!(got.len(), queries.len());
+        for (i, q) in queries.iter().enumerate() {
+            let mut want = 0u64;
+            for x in q.lo..q.hi {
+                for y in x + 1..q.hi {
+                    want += (a[x] > a[y]) as u64;
+                }
+            }
+            assert_eq!(got[i], want, "query {i} = [{}, {}) case {case} n={n}", q.lo, q.hi);
+        }
+        st.case();
+        st.ops(queries.len());
+    }
+    st.done();
+}
+
+#[test]
+fn range_inversions_large() {
+    use mo_algorithm::range_inversions;
+    let mut st = Stress::new("mo/inversions-large");
+    let n = 100_000;
+    let mut rng = Rng::new(21);
+    let a: Vec<u32> = (0..n).map(|_| rng.below(1_000_000) as u32).collect();
+    let queries = random_queries(&mut rng, n, 100_000 * scale());
+    let got = range_inversions(&a, &queries);
+    // Spot-check a handful of short ranges against the quadratic scan.
+    for (i, q) in queries.iter().enumerate().filter(|(_, q)| q.hi - q.lo < 400).take(30) {
+        let mut want = 0u64;
+        for x in q.lo..q.hi {
+            for y in x + 1..q.hi {
+                want += (a[x] > a[y]) as u64;
+            }
+        }
+        assert_eq!(got[i], want, "query {i}");
+    }
+    // The full range through the sorted-array identity: inversions of a sorted array are 0.
+    let sorted: Vec<u32> = (0..n as u32).collect();
+    assert_eq!(range_inversions(&sorted, &[Query { lo: 0, hi: n }]), vec![0]);
+    let reversed: Vec<u32> = (0..n as u32).rev().collect();
+    assert_eq!(range_inversions(&reversed, &[Query { lo: 0, hi: n }]), vec![(n as u64) * (n as u64 - 1) / 2]);
+    st.ops(queries.len());
+    st.done();
+}
