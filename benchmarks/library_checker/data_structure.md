@@ -23,7 +23,7 @@ to build on.
 
 ## Summary
 
-Compared against ac on 24 problems: geometric mean of ours/ac = **0.91**; 19 within 10% or faster, 5 slower than that (`persistent_queue` 1.50×, `point_set_range_composite_large_array` 2.76×, `range_affine_range_sum` 1.13×, `range_affine_range_sum_large_array` 2.86×, `static_range_count_distinct` 1.12×).
+Compared against ac on 25 problems: geometric mean of ours/ac = **0.91**; 20 within 10% or faster, 5 slower than that (`persistent_queue` 1.50×, `point_set_range_composite_large_array` 2.76×, `range_affine_range_sum` 1.13×, `range_affine_range_sum_large_array` 2.86×, `static_range_count_distinct` 1.12×).
 
 New or reworked crates driven by this category: `algebra`, `lazy_segment_tree`, `segment_tree`
 (non-commutative, iterative), `sparse_table` (block-decomposed), `sorted_list`, `union_find`
@@ -32,15 +32,15 @@ New or reworked crates driven by this category: `algebra`, `lazy_segment_tree`, 
 `wavelet_matrix`, `implicit_treap`, `persistent_queue`, `persistent_lazy_segment_tree`,
 `dynamic_segment_tree`, `point_set_range_frequency`, `segment_tree_beats`,
 `linear_add_range_min`, `kd_tree`, `range_sort_sequence`, `seaweed`, `mo_algorithm`
-(rollback Mo, second-order Mo). Each has a randomized stress test against a naive model.
+(rollback Mo, second-order Mo), `hash_map` (open-addressing map) and `deque` (ring buffer). Each has a randomized stress test against a naive model.
 
 ## Results
 
 | Problem | TL (s) | Our lib | ours (ms) | ac (ms) | ours / ac | Comment |
 |---|---:|---|---:|---:|---:|---|
 | `area_of_union_of_rectangles` | 5 | `lazy_segment_tree` | 1252 | 1206 | 1.04× | Sweep with a lazy segtree over (min, count-of-min). Parity with ac's `LazySegtree`. |
-| `associative_array` | 5 | std (`HashMap`) | 238 | — | — | std `HashMap`; nothing in ac applies. |
-| `deque` | 5 | std (`VecDeque`) | 21 | — | — | std `VecDeque`; nothing in ac applies. |
+| `associative_array` | 5 | `hash_map` | 281 | — | — | Open-addressing `FastMap` (linear probing, multiplicative hash, backward-shift deletion). ac has no hash map. |
+| `deque` | 5 | `deque` | 28 | — | — | Power-of-two ring buffer `Deque` with O(1) indexing. ac has no deque. |
 | `deque_operate_all_composite` | 5 | `queue_aggregation` | 37 | — | — | Two-stack deque aggregation (`DequeAggregation`). ac has no such structure. |
 | `double_ended_priority_queue` | 10 | `multiset` | 339 | — | — | Counting `multiset`. ac has no ordered containers. |
 | `dynamic_point_set_rectangle_affine_rectangle_sum` | 10 | `kd_tree` | 3627 | — | — | kd-tree with lazy affine tags (leaf buckets of 32). Slowest test is an adversarial case from a Library Checker issue. ac has no 2D structure. |
@@ -78,7 +78,7 @@ New or reworked crates driven by this category: `algebra`, `lazy_segment_tree`, 
 | `static_range_inversions_query` | 5 | `mo_algorithm` | 139 | 750 | 0.18× | Second-order Mo (`range_inversions`): O(1) work per pointer move. ac column: plain Mo with an ac `FenwickTree` (O(log n) per move), ~5x slower. |
 | `static_range_lis_query` | 5 | `seaweed` | 721 | — | — | Seaweed / unit-Monge product (`seaweed::range_lis`), O((n+q) log^2 n). ac has nothing for this. |
 | `static_range_mode_query` | 5 | `mo_algorithm` | 115 | 112 | 1.03× | Rollback Mo (`solve_rollback`). ac column is hand-written rollback Mo (no ac component applies): the lib wrapper costs nothing. |
-| `static_range_sum` | 5 | std (prefix sums) | 78 | — | — | Prefix sums, std only (I/O bound). |
+| `static_range_sum` | 5 | `fenwick` | 66 | 72 | 0.92× | `FenwickTree::new` (O(n) build) and prefix differences; ac column is `FenwickTree` filled by n `add` calls. Both are dominated by I/O. |
 | `static_range_sum_with_upper_bound` | 5 | `fenwick` | 345 | 381 | 0.91× | Offline `FenwickTree` vs ac `FenwickTree`; a `WaveletMatrix` variant (`..._wm`) was also checked. |
 | `static_rectangle_add_rectangle_sum` | 10 | `fenwick` | 1125 | 1070 | 1.05× | Offline sweep with a 4-channel `FenwickTree` over `Mod4`; ac column is the same sweep on ac's `FenwickTree`. |
 | `staticrmq` | 5 | `sparse_table` | 134 | 163 | 0.82× | Block-decomposed `SparseTable` (O(1) query, ~3n memory) vs ac `Segtree` (`prod`). |
