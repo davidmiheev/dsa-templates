@@ -45,6 +45,9 @@ members = [
     "euler_tour_tree",
     "tree_path_affine_sum",
     "permutation_tree",
+    "csr_graph",
+    "scc",
+    "lowlink",
 ]
 
 [workspace.package]

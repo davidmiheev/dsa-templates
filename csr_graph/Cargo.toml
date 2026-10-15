@@ -1,0 +1,10 @@
+[package]
+name = "csr_graph"
+version = "0.1.0"
+edition = "2021"
+description = "Compressed sparse row adjacency for directed and undirected graphs, shared by the graph crates."
+publish = false
+
+[lib]
+name = "csr_graph"
+path = "src/lib.rs"
