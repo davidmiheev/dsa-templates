@@ -42,7 +42,7 @@ fn matches_naive_with_activation() {
     let mut st = Stress::new("kd_tree/naive");
     for case in 0..600 * scale() {
         let mut rng = Rng::new(case as u64);
-        let n = rng.range(0, 40) as usize;
+        let n = rng.range(0, if case % 4 == 0 { 400 } else { 40 }) as usize;
         let c = *[3i64, 10, 1_000_000_000].get(case % 3).unwrap();
         let points: Vec<(i64, i64)> = (0..n).map(|_| (rng.range(0, c), rng.range(0, c))).collect();
         // Weight `None` = inactive point.

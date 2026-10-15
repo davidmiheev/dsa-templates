@@ -4,6 +4,8 @@
 //! * [`KdTree::apply_rect`]: apply a [`MapMonoid`] action to the points inside a rectangle,
 //! * [`KdTree::set`] / [`KdTree::get`]: replace / read the value of one point.
 //!
+//! Small subtrees (at most 32 points) are stored as flat buckets that are scanned linearly.
+//!
 //! The *shape* is fixed at construction (points cannot be added), but a point can start
 //! "inactive" by carrying the monoid's identity — pair that with a count in the monoid and a
 //! point appears later with `set`. Rectangle operations cost `O(sqrt n)`.
@@ -46,31 +48,49 @@ use algebra::{MapMonoid, Monoid};
 
 type S<A> = <<A as MapMonoid>::M as Monoid>::S;
 
+/// Ranges with at most this many points are leaf buckets.
+const LEAF: usize = 32;
+
 /// See the [module documentation](self).
 pub struct KdTree<A: MapMonoid, X, Y> {
     n: usize,
-    /// Indexed by *tree position*; the subtree of the range `[lo, hi)` is rooted at
-    /// `(lo + hi) / 2`. A node keeps all its fields together: a visit is one cache miss.
+    /// Points and their values by *tree position*; the subtree of the range `[lo, hi)` is rooted
+    /// at `(lo + hi) / 2`. Ranges of at most [`LEAF`] points are buckets.
+    pts: Vec<(X, Y)>,
+    vals: Vec<S<A>>,
+    /// Per-subtree data, stored at the root position of the subtree.
     nodes: Vec<Node<A, X, Y>>,
     /// `pos[i]` = tree position of input point `i`.
     pos: Vec<u32>,
 }
 
 struct Node<A: MapMonoid, X, Y> {
-    px: X,
-    py: Y,
     /// Inclusive bounding box `(x_min, x_max, y_min, y_max)` of the subtree.
     bbox: (X, X, Y, Y),
-    val: S<A>,
     agg: S<A>,
-    /// Pending action for the children (already reflected in `val` and `agg` of the node).
+    /// Pending action for the two children (internal nodes only; the node's own point and `agg`
+    /// already reflect it).
     lazy: Option<A::F>,
 }
 
 impl<A: MapMonoid, X: Clone, Y: Clone> Clone for Node<A, X, Y> {
     fn clone(&self) -> Self {
-        Node { px: self.px.clone(), py: self.py.clone(), bbox: self.bbox.clone(), val: self.val.clone(), agg: self.agg.clone(), lazy: self.lazy.clone() }
+        Node { bbox: self.bbox.clone(), agg: self.agg.clone(), lazy: self.lazy.clone() }
     }
+}
+
+type Rect<X, Y> = (X, X, Y, Y);
+
+fn inside<X: Ord, Y: Ord>(p: &(X, Y), r: &Rect<X, Y>) -> bool {
+    r.0 <= p.0 && p.0 < r.1 && r.2 <= p.1 && p.1 < r.3
+}
+
+fn disjoint<X: Ord, Y: Ord>(bb: &Rect<X, Y>, r: &Rect<X, Y>) -> bool {
+    bb.1 < r.0 || r.1 <= bb.0 || bb.3 < r.2 || r.3 <= bb.2
+}
+
+fn contained<X: Ord, Y: Ord>(bb: &Rect<X, Y>, r: &Rect<X, Y>) -> bool {
+    r.0 <= bb.0 && bb.1 < r.1 && r.2 <= bb.2 && bb.3 < r.3
 }
 
 impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
@@ -83,12 +103,13 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         let n = points.len();
         assert!(n < u32::MAX as usize, "too many points");
         let mut order: Vec<u32> = (0..n as u32).collect();
-        let mut t = KdTree { n, nodes: Vec::new(), pos: vec![0; n] };
+        let mut t = KdTree { n, pts: Vec::new(), vals: Vec::new(), nodes: Vec::new(), pos: vec![0; n] };
         if n > 0 {
             // Placeholders that `build` overwrites position by position.
+            t.pts = vec![points[0]; n];
+            t.vals = vec![values[0].clone(); n];
             let (x0, y0) = points[0];
-            let blank = Node { px: x0, py: y0, bbox: (x0, x0, y0, y0), val: values[0].clone(), agg: values[0].clone(), lazy: None };
-            t.nodes = vec![blank; n];
+            t.nodes = vec![Node { bbox: (x0, x0, y0, y0), agg: values[0].clone(), lazy: None }; n];
             t.build(points, values, &mut order, 0, n);
         }
         t
@@ -109,23 +130,30 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
             yh = yh.max(y);
         }
         let mid = (lo + hi) / 2;
+        self.nodes[mid].bbox = (xl, xh, yl, yh);
+        if hi - lo <= LEAF {
+            for p in lo..hi {
+                let i = order[p] as usize;
+                self.pos[i] = p as u32;
+                self.pts[p] = points[i];
+                self.vals[p] = values[i].clone();
+            }
+            self.nodes[mid].agg = self.fold_bucket(lo, hi);
+            return;
+        }
         // Alternate the split axis by level (subtree sizes halve at every level, so the parity
         // of `log2(size)` flips). Splitting on the larger *spread* instead is tempting, but
         // skewed inputs (one axis with few distinct values) then produce boxes that are thin
         // in one dimension and long in the other, and rectangle queries degrade to `O(n)`.
-        let split_x = (hi - lo).ilog2() % 2 == 0;
-        if split_x {
+        if (hi - lo).ilog2() % 2 == 0 {
             slice.select_nth_unstable_by_key(mid - lo, |&i| points[i as usize].0);
         } else {
             slice.select_nth_unstable_by_key(mid - lo, |&i| points[i as usize].1);
         }
         let i = order[mid] as usize;
         self.pos[i] = mid as u32;
-        let node = &mut self.nodes[mid];
-        node.px = points[i].0;
-        node.py = points[i].1;
-        node.val = values[i].clone();
-        node.bbox = (xl, xh, yl, yh);
+        self.pts[mid] = points[i];
+        self.vals[mid] = values[i].clone();
         self.build(points, values, order, lo, mid);
         self.build(points, values, order, mid + 1, hi);
         self.pull(lo, hi);
@@ -140,10 +168,19 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         self.n == 0
     }
 
-    /// Recompute the aggregate of the subtree of `[lo, hi)` from its children.
+    /// The fold of the values at positions `lo..hi` (a bucket).
+    fn fold_bucket(&self, lo: usize, hi: usize) -> S<A> {
+        let mut agg = <A::M as Monoid>::identity();
+        for v in &self.vals[lo..hi] {
+            agg = <A::M as Monoid>::op(&agg, v);
+        }
+        agg
+    }
+
+    /// Recompute the aggregate of the internal node over `[lo, hi)` from its children.
     fn pull(&mut self, lo: usize, hi: usize) {
         let mid = (lo + hi) / 2;
-        let mut agg = self.nodes[mid].val.clone();
+        let mut agg = self.vals[mid].clone();
         if lo < mid {
             agg = <A::M as Monoid>::op(&self.nodes[(lo + mid) / 2].agg, &agg);
         }
@@ -153,39 +190,35 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         self.nodes[mid].agg = agg;
     }
 
-    fn apply_to(&mut self, node: usize, f: &A::F) {
-        let node = &mut self.nodes[node];
-        node.val = A::apply(f, &node.val);
-        node.agg = A::apply(f, &node.agg);
-        node.lazy = Some(match node.lazy.take() {
-            Some(g) => A::compose(f, &g),
-            None => f.clone(),
-        });
+    /// Apply `f` to *every* point of the subtree over `[lo, hi)`.
+    fn apply_all(&mut self, lo: usize, hi: usize, f: &A::F) {
+        let mid = (lo + hi) / 2;
+        let agg = A::apply(f, &self.nodes[mid].agg);
+        self.nodes[mid].agg = agg;
+        if hi - lo <= LEAF {
+            for v in &mut self.vals[lo..hi] {
+                *v = A::apply(f, v);
+            }
+        } else {
+            self.vals[mid] = A::apply(f, &self.vals[mid]);
+            self.nodes[mid].lazy = Some(match self.nodes[mid].lazy.take() {
+                Some(g) => A::compose(f, &g),
+                None => f.clone(),
+            });
+        }
     }
 
+    /// Push the pending action of the internal node over `[lo, hi)` into its children.
     fn push_down(&mut self, lo: usize, hi: usize) {
         let mid = (lo + hi) / 2;
         if let Some(f) = self.nodes[mid].lazy.take() {
             if lo < mid {
-                self.apply_to((lo + mid) / 2, &f);
+                self.apply_all(lo, mid, &f);
             }
             if mid + 1 < hi {
-                self.apply_to((mid + 1 + hi) / 2, &f);
+                self.apply_all(mid + 1, hi, &f);
             }
         }
-    }
-
-    fn inside(&self, node: usize, r: &(X, X, Y, Y)) -> bool {
-        let n = &self.nodes[node];
-        r.0 <= n.px && n.px < r.1 && r.2 <= n.py && n.py < r.3
-    }
-
-    fn disjoint(bb: &(X, X, Y, Y), r: &(X, X, Y, Y)) -> bool {
-        bb.1 < r.0 || r.1 <= bb.0 || bb.3 < r.2 || r.3 <= bb.2
-    }
-
-    fn contained(bb: &(X, X, Y, Y), r: &(X, X, Y, Y)) -> bool {
-        r.0 <= bb.0 && bb.1 < r.1 && r.2 <= bb.2 && bb.3 < r.3
     }
 
     /// Apply `f` to the values of all points with `x_lo <= x < x_hi` and `y_lo <= y < y_hi`.
@@ -193,21 +226,30 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         self.apply_rec(0, self.n, &(x_lo, x_hi, y_lo, y_hi), &f);
     }
 
-    fn apply_rec(&mut self, lo: usize, hi: usize, r: &(X, X, Y, Y), f: &A::F) {
+    fn apply_rec(&mut self, lo: usize, hi: usize, r: &Rect<X, Y>, f: &A::F) {
         if lo >= hi {
             return;
         }
         let mid = (lo + hi) / 2;
-        if Self::disjoint(&self.nodes[mid].bbox, r) {
+        if disjoint(&self.nodes[mid].bbox, r) {
             return;
         }
-        if Self::contained(&self.nodes[mid].bbox, r) {
-            self.apply_to(mid, f);
+        if contained(&self.nodes[mid].bbox, r) {
+            self.apply_all(lo, hi, f);
+            return;
+        }
+        if hi - lo <= LEAF {
+            for p in lo..hi {
+                if inside(&self.pts[p], r) {
+                    self.vals[p] = A::apply(f, &self.vals[p]);
+                }
+            }
+            self.nodes[mid].agg = self.fold_bucket(lo, hi);
             return;
         }
         self.push_down(lo, hi);
-        if self.inside(mid, r) {
-            self.nodes[mid].val = A::apply(f, &self.nodes[mid].val);
+        if inside(&self.pts[mid], r) {
+            self.vals[mid] = A::apply(f, &self.vals[mid]);
         }
         self.apply_rec(lo, mid, r, f);
         self.apply_rec(mid + 1, hi, r, f);
@@ -220,19 +262,29 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         self.prod_rec(0, self.n, &(x_lo, x_hi, y_lo, y_hi))
     }
 
-    fn prod_rec(&mut self, lo: usize, hi: usize, r: &(X, X, Y, Y)) -> S<A> {
+    fn prod_rec(&mut self, lo: usize, hi: usize, r: &Rect<X, Y>) -> S<A> {
+        let identity = <A::M as Monoid>::identity;
         if lo >= hi {
-            return <A::M as Monoid>::identity();
+            return identity();
         }
         let mid = (lo + hi) / 2;
-        if Self::disjoint(&self.nodes[mid].bbox, r) {
-            return <A::M as Monoid>::identity();
+        if disjoint(&self.nodes[mid].bbox, r) {
+            return identity();
         }
-        if Self::contained(&self.nodes[mid].bbox, r) {
+        if contained(&self.nodes[mid].bbox, r) {
             return self.nodes[mid].agg.clone();
         }
+        if hi - lo <= LEAF {
+            let mut res = identity();
+            for p in lo..hi {
+                if inside(&self.pts[p], r) {
+                    res = <A::M as Monoid>::op(&res, &self.vals[p]);
+                }
+            }
+            return res;
+        }
         self.push_down(lo, hi);
-        let mut res = if self.inside(mid, r) { self.nodes[mid].val.clone() } else { <A::M as Monoid>::identity() };
+        let mut res = if inside(&self.pts[mid], r) { self.vals[mid].clone() } else { identity() };
         let left = self.prod_rec(lo, mid, r);
         let right = self.prod_rec(mid + 1, hi, r);
         res = <A::M as Monoid>::op(&res, &left);
@@ -250,9 +302,14 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
 
     fn set_rec(&mut self, lo: usize, hi: usize, target: usize, x: S<A>) {
         let mid = (lo + hi) / 2;
+        if hi - lo <= LEAF {
+            self.vals[target] = x;
+            self.nodes[mid].agg = self.fold_bucket(lo, hi);
+            return;
+        }
         self.push_down(lo, hi);
         if target == mid {
-            self.nodes[mid].val = x;
+            self.vals[mid] = x;
         } else if target < mid {
             self.set_rec(lo, mid, target, x);
         } else {
@@ -269,10 +326,10 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
         assert!(i < self.n, "point {i} out of range for {} points", self.n);
         let target = self.pos[i] as usize;
         let (mut lo, mut hi) = (0, self.n);
-        loop {
+        while hi - lo > LEAF {
             let mid = (lo + hi) / 2;
             if target == mid {
-                return self.nodes[mid].val.clone();
+                break;
             }
             self.push_down(lo, hi);
             if target < mid {
@@ -281,5 +338,6 @@ impl<A: MapMonoid, X: Ord + Copy, Y: Ord + Copy> KdTree<A, X, Y> {
                 lo = mid + 1;
             }
         }
+        self.vals[target].clone()
     }
 }
