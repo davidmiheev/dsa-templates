@@ -294,49 +294,74 @@ impl Hld {
         }
     }
 
-    /// The vertices of the path between `u` and `v` as position ranges `[lo, hi)`, in no
-    /// particular order. Suitable for commutative aggregates.
-    pub fn path_segments(&self, mut u: usize, mut v: usize) -> Vec<(usize, usize)> {
-        let mut segs = Vec::new();
-        while self.head[u] != self.head[v] {
-            if self.depth[self.head[u]] > self.depth[self.head[v]] {
-                let h = self.head[u];
-                segs.push((self.pos[h], self.pos[u] + 1));
-                u = self.parent[h];
+    /// Calls `f(lo, hi)` for each of the `O(log n)` position ranges `[lo, hi)` that together
+    /// make up the path between `u` and `v`, in no particular order and without allocating.
+    /// Suitable for commutative aggregates.
+    pub fn for_each_path_segment(&self, u: usize, v: usize, mut f: impl FnMut(usize, usize)) {
+        let (mut a, mut b) = (self.pos[u], self.pos[v]);
+        loop {
+            let (ha, hb) = (self.chain[a].0 as usize, self.chain[b].0 as usize);
+            if ha == hb {
+                f(a.min(b), a.max(b) + 1);
+                return;
+            }
+            if ha > hb {
+                f(ha, a + 1);
+                a = self.chain[a].1 as usize;
             } else {
-                let h = self.head[v];
-                segs.push((self.pos[h], self.pos[v] + 1));
-                v = self.parent[h];
+                f(hb, b + 1);
+                b = self.chain[b].1 as usize;
             }
         }
-        segs.push((self.pos[u].min(self.pos[v]), self.pos[u].max(self.pos[v]) + 1));
+    }
+
+    /// The vertices of the path between `u` and `v` as position ranges `[lo, hi)`, in no
+    /// particular order (see [`for_each_path_segment`](Self::for_each_path_segment)).
+    pub fn path_segments(&self, u: usize, v: usize) -> Vec<(usize, usize)> {
+        let mut segs = Vec::new();
+        self.for_each_path_segment(u, v, |lo, hi| segs.push((lo, hi)));
         segs
     }
 
-    /// The path from `u` to `v` as position ranges `[lo, hi)` in *walking order*; the flag is
-    /// `true` when the range is walked from `hi - 1` down to `lo` (towards the root). Use this
-    /// for non-commutative aggregates: fold the range forwards or reversed accordingly.
-    pub fn path_ordered(&self, mut u: usize, mut v: usize) -> Vec<(usize, usize, bool)> {
-        let mut front = Vec::new(); // from u upwards
-        let mut back = Vec::new(); // from v upwards (to be reversed)
-        while self.head[u] != self.head[v] {
-            if self.depth[self.head[u]] > self.depth[self.head[v]] {
-                let h = self.head[u];
-                front.push((self.pos[h], self.pos[u] + 1, true));
-                u = self.parent[h];
+    /// Calls `f(lo, hi, reversed)` for the position ranges of the path from `u` to `v` in
+    /// *walking order*, without allocating; `reversed` is `true` when the range is walked from
+    /// `hi - 1` down to `lo` (towards the root). Use this for non-commutative aggregates: fold
+    /// the range forwards or backwards accordingly.
+    pub fn for_each_path_segment_ordered(&self, u: usize, v: usize, mut f: impl FnMut(usize, usize, bool)) {
+        let (mut a, mut b) = (self.pos[u], self.pos[v]);
+        // Pieces on the `v` side are discovered bottom-up but walked top-down: buffer them (at
+        // most one per light edge, so well below 64).
+        let mut back = [(0usize, 0usize); 64];
+        let mut count = 0;
+        loop {
+            let (ha, hb) = (self.chain[a].0 as usize, self.chain[b].0 as usize);
+            if ha == hb {
+                if a >= b {
+                    f(b, a + 1, true);
+                } else {
+                    f(a, b + 1, false);
+                }
+                break;
+            }
+            if ha > hb {
+                f(ha, a + 1, true);
+                a = self.chain[a].1 as usize;
             } else {
-                let h = self.head[v];
-                back.push((self.pos[h], self.pos[v] + 1, false));
-                v = self.parent[h];
+                back[count] = (hb, b + 1);
+                count += 1;
+                b = self.chain[b].1 as usize;
             }
         }
-        if self.pos[u] >= self.pos[v] {
-            front.push((self.pos[v], self.pos[u] + 1, true));
-        } else {
-            front.push((self.pos[u], self.pos[v] + 1, false));
+        for &(lo, hi) in back[..count].iter().rev() {
+            f(lo, hi, false);
         }
-        back.reverse();
-        front.extend(back);
-        front
+    }
+
+    /// The path from `u` to `v` as position ranges in walking order, see
+    /// [`for_each_path_segment_ordered`](Self::for_each_path_segment_ordered).
+    pub fn path_ordered(&self, u: usize, v: usize) -> Vec<(usize, usize, bool)> {
+        let mut segs = Vec::new();
+        self.for_each_path_segment_ordered(u, v, |lo, hi, rev| segs.push((lo, hi, rev)));
+        segs
     }
 }
