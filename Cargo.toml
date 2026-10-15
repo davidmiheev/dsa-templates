@@ -36,6 +36,7 @@ members = [
     "point_set_range_frequency",
     "segment_tree_beats",
     "linear_add_range_min",
+    "kd_tree",
 ]
 
 [workspace.package]
