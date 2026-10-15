@@ -30,6 +30,8 @@ members = [
     "queue_aggregation",
     "wavelet_matrix",
     "implicit_treap",
+    "persistent_queue",
+    "persistent_lazy_segment_tree",
 ]
 
 [workspace.package]
