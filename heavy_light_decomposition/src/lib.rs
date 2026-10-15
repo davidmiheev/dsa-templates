@@ -47,6 +47,10 @@ pub struct Hld {
     pub pos: Vec<usize>,
     /// Inverse of `pos`: the vertex at each position.
     pub order: Vec<usize>,
+    /// By position: `(position of the chain head, position of the head's parent)`, packed so
+    /// that one hop of a chain walk touches a single cache line. The root chain's parent is
+    /// `u32::MAX`.
+    chain: Vec<(u32, u32)>,
 }
 
 impl Hld {
@@ -185,28 +189,34 @@ impl Hld {
         }
         let mut real_parent = parent.to_vec();
         real_parent[root] = Self::NONE;
-        // Preorder with the heavy child first: push light children, then the heavy one last.
+        // Preorder positions with the heavy child first, assigned top-down in BFS order: the
+        // heavy child directly follows its parent, the light children follow in turn, each
+        // after the whole subtree of the previous one.
+        assert!(n < u32::MAX as usize, "too many vertices");
         let mut head = vec![root; n];
         let mut pos = vec![0usize; n];
-        let mut order = Vec::with_capacity(n);
-        let mut stack = vec![root];
-        while let Some(v) = stack.pop() {
-            pos[v] = order.len();
-            order.push(v);
+        let mut chain = vec![(0u32, u32::MAX); n];
+        for &v in &bfs {
             let kids = &children[offsets[v]..offsets[v + 1]];
-            let heavy = kids.iter().copied().max_by_key(|&u| size[u]);
+            let Some(heavy) = kids.iter().copied().max_by_key(|&u| size[u]) else { continue };
+            pos[heavy] = pos[v] + 1;
+            head[heavy] = head[v];
+            chain[pos[heavy]] = chain[pos[v]];
+            let mut next = pos[v] + 1 + size[heavy];
             for &u in kids {
-                if Some(u) != heavy {
+                if u != heavy {
+                    pos[u] = next;
                     head[u] = u;
-                    stack.push(u);
+                    chain[next] = (next as u32, pos[v] as u32);
+                    next += size[u];
                 }
             }
-            if let Some(h) = heavy {
-                head[h] = head[v];
-                stack.push(h);
-            }
         }
-        Hld { parent: real_parent, depth, size, head, pos, order }
+        let mut order = vec![0usize; n];
+        for (v, &p) in pos.iter().enumerate() {
+            order[p] = v;
+        }
+        Hld { parent: real_parent, depth, size, head, pos, order, chain }
     }
 
     /// Number of vertices.
@@ -229,18 +239,20 @@ impl Hld {
     }
 
     /// Lowest common ancestor of `u` and `v`.
-    pub fn lca(&self, mut u: usize, mut v: usize) -> usize {
-        while self.head[u] != self.head[v] {
-            if self.depth[self.head[u]] > self.depth[self.head[v]] {
-                u = self.parent[self.head[u]];
-            } else {
-                v = self.parent[self.head[v]];
+    pub fn lca(&self, u: usize, v: usize) -> usize {
+        // Work in position space: ancestors have smaller positions, and the chain whose head
+        // lies later in the preorder cannot contain the LCA above its head.
+        let (mut a, mut b) = (self.pos[u], self.pos[v]);
+        loop {
+            let (ha, hb) = (self.chain[a].0, self.chain[b].0);
+            if ha == hb {
+                return self.order[a.min(b)];
             }
-        }
-        if self.depth[u] < self.depth[v] {
-            u
-        } else {
-            v
+            if ha > hb {
+                a = self.chain[a].1 as usize;
+            } else {
+                b = self.chain[b].1 as usize;
+            }
         }
     }
 
