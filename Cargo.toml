@@ -40,6 +40,7 @@ members = [
     "range_sort_sequence",
     "seaweed",
     "tree_algos",
+    "link_cut_tree",
 ]
 
 [workspace.package]
