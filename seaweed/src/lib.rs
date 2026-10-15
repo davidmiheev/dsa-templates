@@ -96,13 +96,13 @@ fn ant(p: &[u32], q: &[u32], out: &mut [u32], scratch: &mut [u32]) {
         rank[c as usize] = 1; // 1 = belongs to the low half
     }
     let (mut a, mut b) = (0u32, 0u32);
-    for c in 0..n {
-        if rank[c] == 1 {
-            rank[c] = a;
+    for (c, r) in rank.iter_mut().enumerate() {
+        if *r == 1 {
+            *r = a;
             cols_lo[a as usize] = c as u32;
             a += 1;
         } else {
-            rank[c] = b;
+            *r = b;
             cols_hi[b as usize] = c as u32;
             b += 1;
         }

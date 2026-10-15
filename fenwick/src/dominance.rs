@@ -120,10 +120,10 @@ where
             answers[items[j].slot as usize] += fenwick.sum_first(y);
         }
     }
-    for k in 0..i {
-        if items[k].slot == ADD {
+    for item in items.iter().take(i) {
+        if item.slot == ADD {
             // Undo with `delta = 0 - w` so that only `Sub` is needed.
-            fenwick.update(items[k].y as usize, W::default() - items[k].w);
+            fenwick.update(item.y as usize, W::default() - item.w);
         }
     }
     buf.clear();
