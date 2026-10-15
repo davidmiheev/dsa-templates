@@ -13,7 +13,7 @@
 //! # Example
 //!
 //! ```
-//! use algebra::Group;
+//! use algebra::{Group, Monoid};
 //! use union_find::PotentialUnionFind;
 //!
 //! /// Integers under addition.
