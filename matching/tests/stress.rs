@@ -143,3 +143,57 @@ fn large_inputs() {
     st.ops(l + n * n);
     st.done();
 }
+
+#[test]
+fn weighted_blossom_matches_bitmask_dp() {
+    use matching::max_weight_matching;
+    let mut st = Stress::new("matching/weighted");
+    for case in 0..3000 * scale() {
+        let mut rng = Rng::new(case as u64 + 9001);
+        let n = rng.range(1, 9) as usize;
+        let density = rng.range(2, 10) as u64;
+        let mut w = vec![vec![0i64; n]; n];
+        let mut edges = Vec::new();
+        for u in 0..n {
+            for v in u + 1..n {
+                if rng.chance(density, 10) {
+                    let weight = if rng.chance(1, 2) { rng.range(1, 3) } else { rng.range(1, 20) };
+                    w[u][v] = weight;
+                    w[v][u] = weight;
+                    edges.push((u, v, weight));
+                }
+            }
+        }
+        // best[mask] = best weight of a matching using only the vertices of `mask`
+        let mut best = vec![0i64; 1 << n];
+        for mask in 1u32..1 << n {
+            let v = mask.trailing_zeros() as usize;
+            let rest = mask & (mask - 1);
+            let mut b = best[rest as usize];
+            for u in 0..n {
+                if rest >> u & 1 == 1 && w[v][u] > 0 {
+                    b = b.max(w[v][u] + best[(rest & !(1 << u)) as usize]);
+                }
+            }
+            best[mask as usize] = b;
+        }
+        let m = max_weight_matching(n, &edges);
+        assert_eq!(m.weight, best[(1 << n) - 1], "case {case}: {edges:?}");
+        // consistency
+        let mut total = 0;
+        let mut count = 0;
+        for v in 0..n {
+            if m.mate[v] != NONE {
+                assert_eq!(m.mate[m.mate[v]], v);
+                assert!(w[v][m.mate[v]] > 0, "matched pair is an edge");
+                if v < m.mate[v] {
+                    total += w[v][m.mate[v]];
+                    count += 1;
+                }
+            }
+        }
+        assert_eq!((total, count), (m.weight, m.size));
+        st.case();
+    }
+    st.done();
+}

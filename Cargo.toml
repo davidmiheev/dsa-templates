@@ -72,6 +72,9 @@ members = [
     "incremental_scc",
     "incremental_msf",
     "graph_center",
+    "k_shortest_walks",
+    "min_cost_flow",
+    "extreme_sets",
 ]
 
 [workspace.package]

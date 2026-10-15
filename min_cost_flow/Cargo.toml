@@ -1,0 +1,10 @@
+[package]
+name = "min_cost_flow"
+version = "0.1.0"
+edition = "2021"
+description = "Minimum cost b-flow with lower/upper bounds and dual potentials (capacity-scaling successive shortest paths)."
+publish = false
+
+[lib]
+name = "min_cost_flow"
+path = "src/lib.rs"
