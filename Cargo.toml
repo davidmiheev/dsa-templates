@@ -32,6 +32,7 @@ members = [
     "implicit_treap",
     "persistent_queue",
     "persistent_lazy_segment_tree",
+    "dynamic_segment_tree",
 ]
 
 [workspace.package]
