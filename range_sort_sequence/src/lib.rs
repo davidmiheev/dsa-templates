@@ -11,8 +11,10 @@
 //! sorted ascending or descending; a run is a dynamic segment tree over the key universe whose
 //! nodes store the fold of their keys in ascending **and** in descending key order. Sorting a
 //! range cuts the two boundary runs (split by rank) and merges all runs inside by segment-tree
-//! merging, which is amortized `O(bits)` per original item; folds cut the boundaries and
-//! multiply at most a few runs per operation. Total `O((n + q) * bits)` amortized.
+//! merging, which is amortized `O(bits)` per original item. A second segment tree over the
+//! *positions* stores each run's fold at the run's start, so a fold cuts its two boundaries and
+//! multiplies the runs in between in `O(log n)`, however many there are. Total
+//! `O((n + q) * (bits + log n))` amortized.
 //!
 //! Keys must stay distinct at all times (merging two runs with a common key panics).
 //!
@@ -63,6 +65,46 @@ struct Run {
     descending: bool,
 }
 
+/// Minimal iterative segment tree for a possibly non-commutative monoid.
+struct PositionTree<M: Monoid> {
+    size: usize,
+    tree: Vec<M::S>,
+}
+
+impl<M: Monoid> PositionTree<M> {
+    fn new(n: usize) -> Self {
+        let size = n.max(1).next_power_of_two();
+        PositionTree { size, tree: vec![M::identity(); 2 * size] }
+    }
+
+    fn set(&mut self, i: usize, v: M::S) {
+        let mut i = i + self.size;
+        self.tree[i] = v;
+        while i > 1 {
+            i >>= 1;
+            self.tree[i] = M::op(&self.tree[2 * i], &self.tree[2 * i + 1]);
+        }
+    }
+
+    fn prod(&self, l: usize, r: usize) -> M::S {
+        let (mut l, mut r) = (l + self.size, r + self.size);
+        let (mut left, mut right) = (M::identity(), M::identity());
+        while l < r {
+            if l & 1 == 1 {
+                left = M::op(&left, &self.tree[l]);
+                l += 1;
+            }
+            if r & 1 == 1 {
+                r -= 1;
+                right = M::op(&self.tree[r], &right);
+            }
+            l >>= 1;
+            r >>= 1;
+        }
+        M::op(&left, &right)
+    }
+}
+
 /// See the [module documentation](self).
 pub struct RangeSortSequence<M: Monoid> {
     n: usize,
@@ -72,6 +114,8 @@ pub struct RangeSortSequence<M: Monoid> {
     free: Vec<u32>,
     /// Run start -> run; the runs tile `0..n`.
     runs: BTreeMap<usize, Run>,
+    /// The fold of the run starting at each position (the identity at non-starts).
+    by_position: PositionTree<M>,
 }
 
 impl<M: Monoid> RangeSortSequence<M> {
@@ -83,15 +127,31 @@ impl<M: Monoid> RangeSortSequence<M> {
         assert!((1..=63).contains(&bits), "bits must be in 1..=63");
         assert!(items.len() < u32::MAX as usize / (bits as usize + 1), "too many items");
         let nil = Node { left: NIL, right: NIL, cnt: 0, asc: M::identity(), desc: M::identity() };
-        let mut s = RangeSortSequence { n: items.len(), bits, nodes: vec![nil], free: Vec::new(), runs: BTreeMap::new() };
+        let mut s = RangeSortSequence { n: items.len(), bits, nodes: vec![nil], free: Vec::new(), runs: BTreeMap::new(), by_position: PositionTree::new(items.len()) };
         let mut keys: Vec<u64> = items.iter().map(|it| it.0).collect();
         keys.sort_unstable();
         assert!(keys.windows(2).all(|w| w[0] != w[1]), "keys must be distinct");
         for (i, (key, value)) in items.iter().enumerate() {
             let root = s.new_path(*key, value.clone());
             s.runs.insert(i, Run { end: i + 1, root, descending: false });
+            s.by_position.tree[s.by_position.size + i] = value.clone();
+        }
+        for i in (1..s.by_position.size).rev() {
+            s.by_position.tree[i] = M::op(&s.by_position.tree[2 * i], &s.by_position.tree[2 * i + 1]);
         }
         s
+    }
+
+    /// The fold of the whole run rooted at `root`, in the run's own order.
+    fn run_fold(&self, root: u32, descending: bool) -> M::S {
+        let node = &self.nodes[root as usize];
+        if descending { node.desc.clone() } else { node.asc.clone() }
+    }
+
+    /// Record in `by_position` that a run starting at `start` now has the given tree/direction.
+    fn index_run(&mut self, start: usize, root: u32, descending: bool) {
+        let fold = self.run_fold(root, descending);
+        self.by_position.set(start, fold);
     }
 
     /// Number of items.
@@ -210,6 +270,8 @@ impl<M: Monoid> RangeSortSequence<M> {
         };
         self.runs.insert(start, Run { end: pos, root: first, descending });
         self.runs.insert(pos, Run { end, root: second, descending });
+        self.index_run(start, first, descending);
+        self.index_run(pos, second, descending);
     }
 
     fn check_range(&self, l: usize, r: usize) {
@@ -228,8 +290,12 @@ impl<M: Monoid> RangeSortSequence<M> {
         for s in starts {
             let run = self.runs.remove(&s).expect("run exists");
             root = self.merge(root, run.root, self.bits);
+            if s != l {
+                self.by_position.set(s, M::identity());
+            }
         }
         self.runs.insert(l, Run { end: r, root, descending });
+        self.index_run(l, root, descending);
     }
 
     /// Sort `[l, r)` by ascending key.
@@ -260,8 +326,9 @@ impl<M: Monoid> RangeSortSequence<M> {
         self.cut(i + 1);
         let old = self.runs.remove(&i).expect("a run starts at i");
         self.release(old.root);
-        let root = self.new_path(key, value);
+        let root = self.new_path(key, value.clone());
         self.runs.insert(i, Run { end: i + 1, root, descending: false });
+        self.by_position.set(i, value);
     }
 
     /// Return the nodes of a (single-item) tree to the free list.
@@ -280,16 +347,11 @@ impl<M: Monoid> RangeSortSequence<M> {
     /// Panics unless `l <= r <= len()`.
     pub fn prod(&mut self, l: usize, r: usize) -> M::S {
         self.check_range(l, r);
-        let mut total = M::identity();
         if l == r {
-            return total;
+            return M::identity();
         }
         self.cut(l);
         self.cut(r);
-        for (_, run) in self.runs.range(l..r) {
-            let node = &self.nodes[run.root as usize];
-            total = M::op(&total, if run.descending { &node.desc } else { &node.asc });
-        }
-        total
+        self.by_position.prod(l, r)
     }
 }
