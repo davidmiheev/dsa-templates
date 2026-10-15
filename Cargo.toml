@@ -29,6 +29,7 @@ members = [
     "fast_set",
     "queue_aggregation",
     "wavelet_matrix",
+    "implicit_treap",
 ]
 
 [workspace.package]
