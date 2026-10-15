@@ -1,0 +1,10 @@
+[package]
+name = "convolution"
+version = "0.1.0"
+edition = "2021"
+description = "Number-theoretic transform convolutions: mod 998244353, and exact integer convolution via three primes."
+publish = false
+
+[lib]
+name = "convolution"
+path = "src/lib.rs"

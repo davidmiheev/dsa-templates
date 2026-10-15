@@ -41,6 +41,7 @@ members = [
     "seaweed",
     "tree_algos",
     "link_cut_tree",
+    "convolution",
 ]
 
 [workspace.package]
