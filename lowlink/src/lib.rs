@@ -174,8 +174,8 @@ impl Lowlink {
         for s in sets.iter_mut() {
             s.sort_unstable();
         }
-        for v in 0..n {
-            if !has_edge[v] {
+        for (v, &covered) in has_edge.iter().enumerate() {
+            if !covered {
                 sets.push(vec![v]);
             }
         }

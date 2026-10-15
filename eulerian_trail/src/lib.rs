@@ -55,8 +55,8 @@ pub fn eulerian_trail_directed(n: usize, edges: &[(usize, usize)]) -> Trail {
         balance[v] -= 1;
     }
     let (mut start, mut ends) = (None, 0);
-    for v in 0..n {
-        match balance[v] {
+    for (v, &b) in balance.iter().enumerate() {
+        match b {
             0 => {}
             1 if start.is_none() => start = Some(v),
             -1 if ends == 0 => ends = 1,

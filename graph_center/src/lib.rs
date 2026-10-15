@@ -75,7 +75,7 @@ where
         let mut max_b: Option<W> = None;
         for &k in &order[u] {
             let k = k as usize;
-            if max_b.map_or(true, |b| db[k] > b) {
+            if max_b < Some(db[k]) {
                 // the previous skyline vertex with the same distance from u is dominated
                 if let Some(&last) = skyline.last() {
                     if da[last] == da[k] {

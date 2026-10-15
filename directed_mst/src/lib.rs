@@ -44,8 +44,12 @@ struct Node<W> {
     r: usize,
 }
 
+/// One chosen edge on the current walk: `(tail, head, edge index)`.
+type Chosen = (usize, usize, usize);
+
 struct Heaps<W> {
     nodes: Vec<Node<W>>,
+    zero: W,
 }
 
 impl<W: Copy + Ord + Add<Output = W> + Sub<Output = W>> Heaps<W> {
@@ -59,7 +63,7 @@ impl<W: Copy + Ord + Add<Output = W> + Sub<Output = W>> Heaps<W> {
         if r != NIL {
             self.nodes[r].delta = self.nodes[r].delta + d;
         }
-        self.nodes[x].delta = d - d;
+        self.nodes[x].delta = self.zero;
     }
 
     /// Iterative skew-heap merge (min at the root).
@@ -114,7 +118,7 @@ where
 {
     assert!(root < n, "root {root} out of range for {n} vertices");
     let zero = W::default();
-    let mut h = Heaps { nodes: Vec::with_capacity(edges.len()) };
+    let mut h = Heaps { nodes: Vec::with_capacity(edges.len()), zero };
     let mut heap = vec![NIL; n];
     for (id, &(a, b, w)) in edges.iter().enumerate() {
         assert!(a < n && b < n, "edge {id} has an endpoint outside 0..{n}");
@@ -127,10 +131,10 @@ where
     let mut seen = vec![NIL; n];
     let mut path = vec![0usize; n];
     // Chosen edges along the current walk: (tail, head, id).
-    let mut chosen: Vec<(usize, usize, usize)> = vec![(0, 0, NIL); n];
+    let mut chosen: Vec<Chosen> = vec![(0, 0, NIL); n];
     let mut inc = vec![(NIL, NIL, NIL); n];
     // (contracted representative, union-find snapshot before it, chosen edges of the cycle)
-    let mut cycles: Vec<(usize, usize, Vec<(usize, usize, usize)>)> = Vec::new();
+    let mut cycles: Vec<(usize, usize, Vec<Chosen>)> = Vec::new();
     seen[root] = root;
     for s in 0..n {
         let (mut u, mut qi) = (s, 0usize);

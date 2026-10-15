@@ -101,7 +101,7 @@ pub fn chromatic_number(n: usize, edges: &[(usize, usize)]) -> usize {
 /// 998 244 353 used by the accumulators.
 pub fn chromatic_polynomial<const M: u32>(n: usize, edges: &[(usize, usize)]) -> Vec<StaticModInt<M>> {
     assert!(M as u64 == P, "the accumulators are specialised to 998244353");
-    assert!(n >= 1 && n <= 22, "need 1..=22 vertices, got {n}");
+    assert!((1..=22).contains(&n), "need 1..=22 vertices, got {n}");
     let (adj, loops) = adjacency(n, edges);
     let w = n + 1;
     // ranked[S * w + r] = number of independent r-subsets of S
@@ -153,12 +153,12 @@ pub fn chromatic_polynomial<const M: u32>(n: usize, edges: &[(usize, usize)]) ->
     let mut poly = vec![Mint::<M>::zero(); w];
     let mut falling = vec![Mint::<M>::one()]; // prod_{j < i} (x - j)
     let mut fact_inv = Mint::<M>::one();
-    for i in 0..w {
+    for (i, &ti) in t.iter().enumerate() {
         if i > 0 {
             fact_inv /= Mint::from(i);
         }
         for (d, &c) in falling.iter().enumerate() {
-            poly[d] += t[i] * fact_inv * c;
+            poly[d] += ti * fact_inv * c;
         }
         // falling *= (x - i)
         let mut next = vec![Mint::<M>::zero(); falling.len() + 1];
