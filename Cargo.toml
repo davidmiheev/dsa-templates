@@ -48,6 +48,9 @@ members = [
     "csr_graph",
     "scc",
     "lowlink",
+    "min_span_tree",
+    "cycle_detection",
+    "eulerian_trail",
 ]
 
 [workspace.package]

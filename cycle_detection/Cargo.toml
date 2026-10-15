@@ -1,0 +1,13 @@
+[package]
+name = "cycle_detection"
+version = "0.1.0"
+edition = "2021"
+description = "Find a simple cycle in a directed or undirected (multi)graph."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "cycle_detection"
+path = "src/lib.rs"
