@@ -1,182 +1,330 @@
-//! Heavy-Light Decomposition (HLD).
+//! Heavy-Light Decomposition (HLD) of a rooted tree.
 //!
-//! Heavy-Light Decomposition splits a tree into "heavy" paths (chains of
-//! vertices where each parent has its largest subtree as its first
-//! child) and "light" edges (connecting chains). Once decomposed, any
-//! path from `u` to `v` can be split into O(log n) segments, each lying
-//! within a single chain. By storing per-chain data in a Fenwick tree
-//! or segment tree, you can answer path queries / updates in
-//! O(log² n) overall.
+//! The tree is cut into *heavy chains* (every vertex continues the chain into its child with the
+//! largest subtree) and the vertices are numbered in a DFS preorder that visits the heavy child
+//! first. Consequently
 //!
-//! This crate ships the decomposition itself: it computes for each
-//! vertex its parent, depth, subtree size, the head of the chain it
-//! belongs to, and its position in the linearised chain order. You can
-//! then plug in any range-query data structure of your choice on top
-//! of that linearisation.
+//! * every chain occupies consecutive positions,
+//! * the subtree of `v` is the position range `pos[v] .. pos[v] + size[v]`,
+//! * any path is a union of `O(log n)` chain pieces, i.e. `O(log n)` position ranges.
+//!
+//! Put a Fenwick / segment tree over the positions and path or subtree queries become range
+//! queries. On top of that the crate answers [`lca`](Hld::lca), [`dist`](Hld::dist),
+//! [`jump`](Hld::jump) (k-th ancestor) and [`path_vertex`](Hld::path_vertex) (k-th vertex on a
+//! path) in `O(log n)`.
+//!
+//! Everything is iterative, so million-vertex paths are fine. The root's parent is
+//! [`Hld::NONE`]. Edges can be given as adjacency lists, an edge list, or a parent array.
 //!
 //! # Example
 //!
 //! ```
 //! use heavy_light_decomposition::Hld;
 //!
-//! // Tree:
-//! //      0
-//! //      |
-//! //      1
-//! //     / \
-//! //    2   3
-//! //    |   |
-//! //    4   5
-//! let adj = vec![
-//!     vec![1],
-//!     vec![0, 2, 3],
-//!     vec![1, 4],
-//!     vec![1, 5],
-//!     vec![2],
-//!     vec![3],
-//! ];
-//! let hld = Hld::new(&adj, 0);
-//! assert_eq!(hld.parent[1], Some(0));
-//! assert_eq!(hld.depth[4], 3);
+//! // 0 - 1 - {2 - 4, 3 - 5}
+//! let hld = Hld::from_edges(6, &[(0, 1), (1, 2), (1, 3), (2, 4), (3, 5)], 0);
+//! assert_eq!(hld.parent[1], 0);
+//! assert_eq!(hld.parent[0], Hld::NONE);
+//! assert_eq!(hld.lca(4, 5), 1);
+//! assert_eq!(hld.dist(4, 5), 4);
+//! assert_eq!(hld.path_vertex(4, 5, 2), 1); // 4, 2, 1, 3, 5
+//! // The path 4 -> 5 as position ranges (one per chain it touches).
+//! assert_eq!(hld.path_segments(4, 5).len(), 2);
 //! ```
 
-/// Heavy-Light Decomposition over a rooted tree.
+/// Heavy-light decomposition over a tree rooted at `root`.
 #[derive(Debug, Clone)]
 pub struct Hld {
-    /// Parent of each vertex in the rooted tree. `None` for the root.
-    pub parent: Vec<Option<usize>>,
-    /// Depth of each vertex (root has depth 0).
+    /// Parent of each vertex; [`Hld::NONE`] for the root.
+    pub parent: Vec<usize>,
+    /// Depth of each vertex (the root has depth 0).
     pub depth: Vec<usize>,
     /// Subtree size of each vertex (including itself).
     pub size: Vec<usize>,
-    /// Head of the heavy chain containing each vertex.
+    /// Head (top vertex) of the heavy chain containing each vertex.
     pub head: Vec<usize>,
-    /// Position of each vertex in the linearised order of chains.
+    /// Position of each vertex in the DFS preorder (heavy child first).
     pub pos: Vec<usize>,
+    /// Inverse of `pos`: the vertex at each position.
+    pub order: Vec<usize>,
 }
 
 impl Hld {
-    /// Build the decomposition for the tree `adj` rooted at `root`.
-    ///
-    /// `adj[v]` is the list of neighbours of `v`. The tree is assumed
-    /// to be connected and undirected; edges to a vertex's parent are
-    /// filtered automatically.
+    /// The parent of the root.
+    pub const NONE: usize = usize::MAX;
+
+    /// Build from adjacency lists (`adj[v]` = neighbours of `v`).
     ///
     /// # Panics
-    /// Panics if `root >= adj.len()`.
+    /// Panics if `root >= adj.len()`, or the graph is not a tree.
     pub fn new(adj: &[Vec<usize>], root: usize) -> Self {
         let n = adj.len();
+        let mut offsets = vec![0usize; n + 1];
+        for (v, a) in adj.iter().enumerate() {
+            offsets[v + 1] = offsets[v] + a.len();
+        }
+        let targets: Vec<usize> = adj.iter().flatten().copied().collect();
+        Self::from_csr(&offsets, &targets, root)
+    }
+
+    /// Build from an undirected edge list over vertices `0..n`.
+    ///
+    /// # Panics
+    /// Panics if `root >= n`, an endpoint is out of range, or the edges do not form a tree.
+    pub fn from_edges(n: usize, edges: &[(usize, usize)], root: usize) -> Self {
+        assert_eq!(edges.len() + 1, n, "a tree on {n} vertices has {} edges", n.wrapping_sub(1));
+        let mut offsets = vec![0usize; n + 2];
+        for &(u, v) in edges {
+            assert!(u < n && v < n, "edge endpoint out of range");
+            offsets[u + 2] += 1;
+            offsets[v + 2] += 1;
+        }
+        for i in 2..n + 2 {
+            offsets[i] += offsets[i - 1];
+        }
+        let mut targets = vec![0usize; 2 * edges.len()];
+        for &(u, v) in edges {
+            targets[offsets[u + 1]] = v;
+            offsets[u + 1] += 1;
+            targets[offsets[v + 1]] = u;
+            offsets[v + 1] += 1;
+        }
+        offsets.pop();
+        Self::from_csr(&offsets, &targets, root)
+    }
+
+    /// Build from a parent array: `parent[v]` is the parent of `v`, and the entry of `root` is
+    /// ignored.
+    ///
+    /// # Panics
+    /// Panics if `root` is out of range or the array does not describe a tree rooted at `root`.
+    pub fn from_parents(parent: &[usize], root: usize) -> Self {
+        let n = parent.len();
         assert!(root < n, "root vertex out of range");
-
-        // Phase 1: parent + depth + subtree size via iterative DFS.
-        let mut parent: Vec<Option<usize>> = vec![None; n];
-        let mut depth = vec![0usize; n];
-        let mut size = vec![1usize; n];
-        // We store (vertex, parent, state) where state = 0 means "enter"
-        // and state = 1 means "exit".
-        let mut stack: Vec<(usize, Option<usize>, u8)> = vec![(root, None, 0)];
-        let mut order: Vec<usize> = Vec::with_capacity(n);
-        while let Some((v, p, state)) = stack.pop() {
-            if state == 0 {
-                parent[v] = p;
-                depth[v] = match p {
-                    Some(pv) => depth[pv] + 1,
-                    None => 0,
-                };
-                stack.push((v, p, 1));
-                for &u in &adj[v] {
-                    if Some(u) != p {
-                        stack.push((u, Some(v), 0));
-                    }
-                }
-            } else {
-                order.push(v);
-            }
-        }
-        for &v in &order {
+        let mut offsets = vec![0usize; n + 2];
+        for (v, &p) in parent.iter().enumerate() {
             if v != root {
-                if let Some(p) = parent[v] {
-                    size[p] += size[v];
+                assert!(p < n, "parent out of range");
+                offsets[p + 2] += 1;
+            }
+        }
+        for i in 2..n + 2 {
+            offsets[i] += offsets[i - 1];
+        }
+        let mut children = vec![0usize; n.saturating_sub(1)];
+        for (v, &p) in parent.iter().enumerate() {
+            if v != root {
+                children[offsets[p + 1]] = v;
+                offsets[p + 1] += 1;
+            }
+        }
+        offsets.pop();
+        Self::from_rooted(parent, &offsets, &children, root)
+    }
+
+    fn from_csr(offsets: &[usize], targets: &[usize], root: usize) -> Self {
+        let n = offsets.len() - 1;
+        assert!(root < n, "root vertex out of range");
+        // BFS to find parents; the tree is checked to be connected and acyclic.
+        let mut parent = vec![Self::NONE; n];
+        let mut order = Vec::with_capacity(n);
+        let mut seen = vec![false; n];
+        seen[root] = true;
+        order.push(root);
+        let mut i = 0;
+        while i < order.len() {
+            let v = order[i];
+            i += 1;
+            for &u in &targets[offsets[v]..offsets[v + 1]] {
+                if u != parent[v] {
+                    assert!(!seen[u], "the graph contains a cycle");
+                    seen[u] = true;
+                    parent[u] = v;
+                    order.push(u);
                 }
             }
         }
+        assert_eq!(order.len(), n, "the graph is not connected");
+        // Children lists: neighbours except the parent, in the same CSR slots.
+        let mut child_offsets = vec![0usize; n + 1];
+        for v in 0..n {
+            child_offsets[v + 1] = child_offsets[v] + (offsets[v + 1] - offsets[v]) - (v != root) as usize;
+        }
+        let mut children = vec![0usize; n.saturating_sub(1)];
+        for v in 0..n {
+            let mut k = child_offsets[v];
+            for &u in &targets[offsets[v]..offsets[v + 1]] {
+                if u != parent[v] {
+                    children[k] = u;
+                    k += 1;
+                }
+            }
+        }
+        Self::from_rooted(&parent, &child_offsets, &children, root)
+    }
 
-        // Phase 2: chain heads + positions via DFS from root, picking
-        // the heavy child as the next link.
+    fn from_rooted(parent: &[usize], offsets: &[usize], children: &[usize], root: usize) -> Self {
+        let n = parent.len();
+        // BFS order, depth.
+        let mut bfs = Vec::with_capacity(n);
+        let mut depth = vec![0usize; n];
+        bfs.push(root);
+        let mut i = 0;
+        while i < bfs.len() {
+            let v = bfs[i];
+            i += 1;
+            for &u in &children[offsets[v]..offsets[v + 1]] {
+                depth[u] = depth[v] + 1;
+                bfs.push(u);
+            }
+        }
+        assert_eq!(bfs.len(), n, "the parent array does not describe a tree rooted at {root}");
+        let mut size = vec![1usize; n];
+        for &v in bfs.iter().skip(1).rev() {
+            size[parent[v]] += size[v];
+        }
+        let mut real_parent = parent.to_vec();
+        real_parent[root] = Self::NONE;
+        // Preorder with the heavy child first: push light children, then the heavy one last.
         let mut head = vec![root; n];
         let mut pos = vec![0usize; n];
-        let mut cur_pos = 0usize;
-        dfs_decompose(adj, root, usize::MAX, root, &size, &mut head, &mut pos, &mut cur_pos);
+        let mut order = Vec::with_capacity(n);
+        let mut stack = vec![root];
+        while let Some(v) = stack.pop() {
+            pos[v] = order.len();
+            order.push(v);
+            let kids = &children[offsets[v]..offsets[v + 1]];
+            let heavy = kids.iter().copied().max_by_key(|&u| size[u]);
+            for &u in kids {
+                if Some(u) != heavy {
+                    head[u] = u;
+                    stack.push(u);
+                }
+            }
+            if let Some(h) = heavy {
+                head[h] = head[v];
+                stack.push(h);
+            }
+        }
+        Hld { parent: real_parent, depth, size, head, pos, order }
+    }
 
-        Hld {
-            parent,
-            depth,
-            size,
-            head,
-            pos,
+    /// Number of vertices.
+    pub fn len(&self) -> usize {
+        self.parent.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.parent.is_empty()
+    }
+
+    /// The positions `pos[v] .. pos[v] + size[v]` covered by the subtree of `v`.
+    pub fn subtree(&self, v: usize) -> (usize, usize) {
+        (self.pos[v], self.pos[v] + self.size[v])
+    }
+
+    /// Whether `u` is an ancestor of `v` (every vertex is its own ancestor).
+    pub fn is_ancestor(&self, u: usize, v: usize) -> bool {
+        self.pos[u] <= self.pos[v] && self.pos[v] < self.pos[u] + self.size[u]
+    }
+
+    /// Lowest common ancestor of `u` and `v`.
+    pub fn lca(&self, mut u: usize, mut v: usize) -> usize {
+        while self.head[u] != self.head[v] {
+            if self.depth[self.head[u]] > self.depth[self.head[v]] {
+                u = self.parent[self.head[u]];
+            } else {
+                v = self.parent[self.head[v]];
+            }
+        }
+        if self.depth[u] < self.depth[v] {
+            u
+        } else {
+            v
         }
     }
 
-    /// Decompose the path between `u` and `v` into half-open segments
-    /// `[lo, hi)` in the linearised chain order. Pass these segments to
-    /// a Fenwick / segment tree built on `pos` to answer path queries.
-    pub fn path_segments(&self, u: usize, v: usize) -> Vec<(usize, usize)> {
+    /// Number of edges on the path between `u` and `v`.
+    pub fn dist(&self, u: usize, v: usize) -> usize {
+        self.depth[u] + self.depth[v] - 2 * self.depth[self.lca(u, v)]
+    }
+
+    /// The `k`-th ancestor of `v` (`k = 0` is `v` itself).
+    ///
+    /// # Panics
+    /// Panics if `k > depth[v]`.
+    pub fn jump(&self, mut v: usize, mut k: usize) -> usize {
+        assert!(k <= self.depth[v], "vertex {v} has no ancestor {k} levels up");
+        loop {
+            let h = self.head[v];
+            let up = self.depth[v] - self.depth[h];
+            if k <= up {
+                return self.order[self.pos[v] - k];
+            }
+            k -= up + 1;
+            v = self.parent[h];
+        }
+    }
+
+    /// The `k`-th vertex on the path from `u` to `v` (`k = 0` is `u`, `k = dist(u, v)` is `v`).
+    ///
+    /// # Panics
+    /// Panics if `k > dist(u, v)`.
+    pub fn path_vertex(&self, u: usize, v: usize, k: usize) -> usize {
+        let l = self.lca(u, v);
+        let up = self.depth[u] - self.depth[l];
+        let down = self.depth[v] - self.depth[l];
+        assert!(k <= up + down, "the path has only {} vertices", up + down + 1);
+        if k <= up {
+            self.jump(u, k)
+        } else {
+            self.jump(v, up + down - k)
+        }
+    }
+
+    /// The vertices of the path between `u` and `v` as position ranges `[lo, hi)`, in no
+    /// particular order. Suitable for commutative aggregates.
+    pub fn path_segments(&self, mut u: usize, mut v: usize) -> Vec<(usize, usize)> {
         let mut segs = Vec::new();
-        let (mut u, mut v) = (u, v);
         while self.head[u] != self.head[v] {
             if self.depth[self.head[u]] > self.depth[self.head[v]] {
                 let h = self.head[u];
                 segs.push((self.pos[h], self.pos[u] + 1));
-                u = self.parent[h].unwrap();
+                u = self.parent[h];
             } else {
                 let h = self.head[v];
                 segs.push((self.pos[h], self.pos[v] + 1));
-                v = self.parent[h].unwrap();
+                v = self.parent[h];
             }
         }
-        let (lo, hi) = if self.pos[u] <= self.pos[v] {
-            (self.pos[u], self.pos[v] + 1)
-        } else {
-            (self.pos[v], self.pos[u] + 1)
-        };
-        segs.push((lo, hi));
+        segs.push((self.pos[u].min(self.pos[v]), self.pos[u].max(self.pos[v]) + 1));
         segs
     }
-}
 
-fn dfs_decompose(
-    adj: &[Vec<usize>],
-    v: usize,
-    p: usize,
-    head: usize,
-    size: &[usize],
-    head_out: &mut [usize],
-    pos_out: &mut [usize],
-    cur_pos: &mut usize,
-) {
-    head_out[v] = head;
-    pos_out[v] = *cur_pos;
-    *cur_pos += 1;
-
-    // Find the heavy child (largest subtree).
-    let mut heavy: Option<usize> = None;
-    let mut heavy_size = 0usize;
-    for &u in &adj[v] {
-        if u != p && size[u] > heavy_size {
-            heavy_size = size[u];
-            heavy = Some(u);
+    /// The path from `u` to `v` as position ranges `[lo, hi)` in *walking order*; the flag is
+    /// `true` when the range is walked from `hi - 1` down to `lo` (towards the root). Use this
+    /// for non-commutative aggregates: fold the range forwards or reversed accordingly.
+    pub fn path_ordered(&self, mut u: usize, mut v: usize) -> Vec<(usize, usize, bool)> {
+        let mut front = Vec::new(); // from u upwards
+        let mut back = Vec::new(); // from v upwards (to be reversed)
+        while self.head[u] != self.head[v] {
+            if self.depth[self.head[u]] > self.depth[self.head[v]] {
+                let h = self.head[u];
+                front.push((self.pos[h], self.pos[u] + 1, true));
+                u = self.parent[h];
+            } else {
+                let h = self.head[v];
+                back.push((self.pos[h], self.pos[v] + 1, false));
+                v = self.parent[h];
+            }
         }
-    }
-
-    // Recurse into the heavy child continuing the chain.
-    if let Some(h) = heavy {
-        dfs_decompose(adj, h, v, head, size, head_out, pos_out, cur_pos);
-    }
-
-    // Recurse into light children starting new chains.
-    for &u in &adj[v] {
-        if u != p && Some(u) != heavy {
-            dfs_decompose(adj, u, v, u, size, head_out, pos_out, cur_pos);
+        if self.pos[u] >= self.pos[v] {
+            front.push((self.pos[v], self.pos[u] + 1, true));
+        } else {
+            front.push((self.pos[u], self.pos[v] + 1, false));
         }
+        back.reverse();
+        front.extend(back);
+        front
     }
 }
