@@ -122,3 +122,41 @@ fn large_matches_block_model() {
     }
     st.done();
 }
+
+#[test]
+fn lower_bound_and_sum_first_match_naive() {
+    let mut st = Stress::new("fenwick/lower_bound");
+    for case in 0..300 * scale() {
+        let mut rng = Rng::new(900 + case as u64);
+        let n = rng.range(0, 70) as usize;
+        let mut model: Vec<i64> = (0..n).map(|_| rng.range(0, 5)).collect(); // non-negative, many zeros
+        let mut ft = FenwickTree::new(&model);
+        st.case();
+        for _ in 0..80 {
+            if n > 0 && rng.chance(1, 2) {
+                let i = rng.below(n);
+                let d = rng.range(0, 4); // keep elements non-negative
+                model[i] += d;
+                ft.update(i, d);
+            }
+            let total: i64 = model.iter().sum();
+            let target = rng.range(-2, total + 3);
+            let mut acc = 0;
+            let want = (0..n).find(|&i| { acc += model[i]; acc >= target }).unwrap_or(n);
+            assert_eq!(ft.lower_bound(target), if target <= 0 { 0 } else { want }, "target {target} case {case} {model:?}");
+            let k = rng.below(n + 1);
+            assert_eq!(ft.sum_first(k), model[..k].iter().sum::<i64>(), "sum_first({k}) case {case}");
+            st.ops(2);
+        }
+    }
+    st.done();
+}
+
+#[test]
+fn with_len_starts_at_zero() {
+    let mut ft = FenwickTree::<i64>::with_len(5);
+    assert_eq!((ft.len(), ft.pref(4)), (5, 0));
+    ft.update(3, 7);
+    assert_eq!((ft.sum_range(3, 3), ft.sum_range(0, 2), ft.lower_bound(7)), (7, 0, 3));
+    assert_eq!(FenwickTree::<i64>::with_len(0).lower_bound(1), 0);
+}
