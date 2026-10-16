@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
+    "sublinear",
+    "prime_sieve",
+    "stern_brocot",
     "fenwick",
     "segment_tree",
     "union_find",

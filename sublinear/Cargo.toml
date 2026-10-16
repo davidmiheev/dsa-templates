@@ -1,0 +1,14 @@
+[package]
+name = "sublinear"
+version = "0.1.0"
+edition = "2021"
+description = "Sublinear-time sums over floor quotients: Lucy prime counting, Min_25 sums of multiplicative functions, Dirichlet products and inverses of prefix sums, Mertens and squarefree counts."
+publish = false
+
+[lib]
+name = "sublinear"
+path = "src/lib.rs"
+
+[dependencies]
+prime_sieve = { path = "../prime_sieve" }
+modint = { path = "../modint" }

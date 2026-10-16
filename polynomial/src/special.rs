@@ -210,6 +210,15 @@ pub fn interpolate_geometric<const M: u32>(y: &[Mint<M>], a: Mint<M>, q: Mint<M>
     (0..n).map(|j| inv_f[j] * corr[n - 1 - j]).collect()
 }
 
+/// The Bernoulli numbers `B_0, ..., B_n` (convention `B_1 = -1/2`): `B_j / j!` are the
+/// coefficients of `x / (e^x - 1)`, one power series inverse. `O(n log n)`.
+pub fn bernoulli_numbers<const M: u32>(n: usize) -> Vec<Mint<M>> {
+    let (fact, inv_fact) = factorials::<M>(n + 2);
+    let denom: Vec<Mint<M>> = (0..n + 2).map(|t| inv_fact[t + 1]).collect();
+    let b = fps::inv(&denom, n + 1);
+    (0..=n).map(|j| b[j] * fact[j]).collect()
+}
+
 /// `g` of degree `<= n` with `g(m) = sum_{i < m} f(i)` for every integer `m >= 0`, where
 /// `f = a_0 + a_1 x + ...` has `n` coefficients. From Faulhaber's formula with Bernoulli numbers:
 /// `g_m = (1/m!) sum_j (B_j / j!) a_{m+j-1} (m+j-1)!`.
