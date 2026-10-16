@@ -1,0 +1,10 @@
+[package]
+name = "deque"
+version = "0.1.0"
+edition = "2021"
+description = "Ring-buffer deque with O(1) push/pop at both ends and random access."
+publish = false
+
+[lib]
+name = "deque"
+path = "src/lib.rs"

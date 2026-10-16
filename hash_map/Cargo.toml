@@ -1,0 +1,10 @@
+[package]
+name = "hash_map"
+version = "0.1.0"
+edition = "2021"
+description = "Open-addressing hash map from u64 keys (linear probing, backward-shift deletion)."
+publish = false
+
+[lib]
+name = "hash_map"
+path = "src/lib.rs"

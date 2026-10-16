@@ -1,0 +1,13 @@
+[package]
+name = "edge_coloring"
+version = "0.1.0"
+edition = "2021"
+description = "Optimal edge colouring of bipartite multigraphs (Konig): regularise, Euler-split, match."
+publish = false
+
+[dependencies]
+matching = { path = "../matching" }
+
+[lib]
+name = "edge_coloring"
+path = "src/lib.rs"

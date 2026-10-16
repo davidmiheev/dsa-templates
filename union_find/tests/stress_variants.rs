@@ -327,3 +327,57 @@ fn range_parallel_large_matches_plain_dsu() {
     }
     st.done();
 }
+
+#[test]
+fn rollback_sum_matches_recomputation() {
+    use union_find::RollbackSumUnionFind;
+    let mut st = Stress::new("union_find/rollback_sum");
+    for case in 0..800 * scale() {
+        let mut rng = Rng::new(case as u64 + 4242);
+        let n = rng.range(1, 9) as usize;
+        let mut values: Vec<i64> = (0..n).map(|_| rng.range(0, 9)).collect();
+        let mut uf = RollbackSumUnionFind::new(&values);
+        // edges currently merged, with the stack of snapshots
+        let mut merged: Vec<(usize, usize)> = Vec::new();
+        let mut marks: Vec<(usize, usize)> = Vec::new(); // (snapshot, merged.len())
+        for _ in 0..rng.range(1, 40) {
+            match rng.below(4) {
+                0 => {
+                    let (a, b) = (rng.below(n), rng.below(n));
+                    uf.union(a, b);
+                    merged.push((a, b));
+                }
+                1 => {
+                    let (v, x) = (rng.below(n), rng.range(0, 9));
+                    uf.add(v, x);
+                    values[v] += x;
+                }
+                2 => marks.push((uf.snapshot(), merged.len())),
+                _ => {
+                    if let Some((snap, len)) = marks.pop() {
+                        uf.rollback(snap);
+                        merged.truncate(len);
+                    }
+                }
+            }
+            // recompute components from `merged`
+            let mut comp: Vec<usize> = (0..n).collect();
+            for &(a, b) in &merged {
+                let (x, y) = (comp[a], comp[b]);
+                for c in comp.iter_mut() {
+                    if *c == y {
+                        *c = x;
+                    }
+                }
+            }
+            for v in 0..n {
+                let expect: i64 = (0..n).filter(|&w| comp[w] == comp[v]).map(|w| values[w]).sum();
+                assert_eq!(uf.sum(v), expect, "case {case}");
+                assert_eq!(uf.same(v, 0), comp[v] == comp[0]);
+            }
+            st.ops(n);
+        }
+        st.case();
+    }
+    st.done();
+}

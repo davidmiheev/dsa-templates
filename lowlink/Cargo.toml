@@ -1,0 +1,13 @@
+[package]
+name = "lowlink"
+version = "0.1.0"
+edition = "2021"
+description = "Lowlink DFS of an undirected multigraph: bridges, articulation points, 2-edge- and 2-vertex-connected components."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "lowlink"
+path = "src/lib.rs"

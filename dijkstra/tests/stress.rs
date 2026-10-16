@@ -1,93 +1,86 @@
-//! Stress test: Dijkstra against Bellman-Ford on random directed graphs (zero weights,
-//! parallel edges and self-loops included), plus an optimality certificate at scale.
+//! Stress test: Dijkstra against Bellman-Ford on random directed / undirected multigraphs,
+//! with zero weights, self-loops and parallel edges; paths are checked edge by edge.
 
+use csr_graph::Csr;
 use dijkstra::dijkstra;
-use std::collections::HashMap;
 
 #[path = "../../stress_common.rs"]
 mod common;
 use common::{scale, Rng, Stress};
 
-type Graph = Vec<Vec<(usize, u64)>>;
+const INF: u64 = u64::MAX / 4;
 
-fn random_graph(rng: &mut Rng, n: usize, m: usize, max_w: u64, min_w: u64) -> Graph {
-    let mut g = vec![Vec::new(); n];
-    for _ in 0..m {
-        let (u, v) = (rng.below(n), rng.below(n));
-        g[u].push((v, min_w + rng.next_u64() % (max_w - min_w + 1)));
-    }
-    g
-}
-
-fn bellman_ford(g: &Graph, s: usize) -> HashMap<usize, u64> {
-    let mut d: Vec<Option<u64>> = vec![None; g.len()];
-    d[s] = Some(0);
-    for _ in 0..g.len() {
-        let mut changed = false;
-        for u in 0..g.len() {
-            if let Some(du) = d[u] {
-                for &(v, w) in &g[u] {
-                    if d[v].map_or(true, |dv| du + w < dv) {
-                        d[v] = Some(du + w);
-                        changed = true;
-                    }
-                }
+fn bellman_ford(n: usize, arcs: &[(usize, usize, u64)], s: usize) -> Vec<u64> {
+    let mut d = vec![INF; n];
+    d[s] = 0;
+    for _ in 0..n {
+        for &(u, v, w) in arcs {
+            if d[u] < INF && d[u] + w < d[v] {
+                d[v] = d[u] + w;
             }
         }
-        if !changed {
-            break;
-        }
     }
-    d.iter().enumerate().filter_map(|(v, x)| x.map(|x| (v, x))).collect()
+    d
 }
 
 #[test]
 fn matches_bellman_ford() {
     let mut st = Stress::new("dijkstra/naive");
-    for case in 0..600 * scale() {
+    for case in 0..1500 * scale() {
         let mut rng = Rng::new(case as u64);
-        let n = rng.range(1, 25) as usize;
-        let max_w = *[0u64, 3, 100, 1_000_000_000_000].get(case % 4).unwrap();
-        let m = rng.below(4 * n + 1);
-        let g = random_graph(&mut rng, n, m, max_w, 0);
-        st.case();
-        for s in 0..n {
-            assert_eq!(dijkstra(&g, s), bellman_ford(&g, s), "from {s}, case {case}, max_w {max_w}");
-            st.ops(1);
+        let n = rng.range(1, 12) as usize;
+        let m = rng.range(0, 30) as usize;
+        let directed = case % 2 == 0;
+        let wmax = *[1usize, 5, 1000].get(case % 3).unwrap();
+        let edges: Vec<(usize, usize)> = (0..m).map(|_| (rng.below(n), rng.below(n))).collect();
+        let w: Vec<u64> = (0..m).map(|_| rng.below(wmax + 1) as u64).collect();
+        let g = if directed { Csr::directed(n, &edges) } else { Csr::undirected(n, &edges) };
+        let mut arcs: Vec<(usize, usize, u64)> = edges.iter().zip(&w).map(|(&(u, v), &w)| (u, v, w)).collect();
+        if !directed {
+            arcs.extend(edges.iter().zip(&w).map(|(&(u, v), &w)| (v, u, w)));
         }
+        let s = rng.below(n);
+        let sp = dijkstra(&g, &w, s);
+        let want = bellman_ford(n, &arcs, s);
+        for v in 0..n {
+            assert_eq!(sp.reachable(v), want[v] < INF, "reachable({v}) case {case}");
+            if want[v] < INF {
+                assert_eq!(sp.dist[v], want[v], "dist[{v}] case {case}");
+                // The returned path is a real path of that length.
+                let vs = sp.path_vertices(v);
+                let es = sp.path_edges(v);
+                assert_eq!((vs[0], *vs.last().unwrap(), vs.len()), (s, v, es.len() + 1));
+                let mut total = 0;
+                for (i, &e) in es.iter().enumerate() {
+                    let (a, b) = edges[e];
+                    assert!((a == vs[i] && b == vs[i + 1]) || (!directed && b == vs[i] && a == vs[i + 1]), "edge {e} joins path vertices, case {case}");
+                    total += w[e];
+                }
+                assert_eq!(total, want[v], "path length case {case}");
+            }
+        }
+        st.case();
+        st.ops(1);
     }
     st.done();
 }
 
 #[test]
-fn source_out_of_range_panics() {
-    let g: Graph = vec![vec![(0, 1)]];
-    assert!(std::panic::catch_unwind(|| dijkstra(&g, 1)).is_err());
-}
-
-#[test]
-fn large_graph_satisfies_optimality_certificate() {
-    // With strictly positive weights, distances are optimal iff (1) no edge can be relaxed and
-    // (2) every reached vertex other than the source has a "tight" incoming edge.
+fn large_graph() {
     let mut st = Stress::new("dijkstra/large");
-    let n = 200_000;
-    let mut rng = Rng::new(6);
-    let g = random_graph(&mut rng, n, 600_000, 1_000_000, 1);
+    let (n, m) = (500_000, 1_000_000);
+    let mut rng = Rng::new(3);
+    let edges: Vec<(usize, usize)> = (0..m).map(|_| (rng.below(n), rng.below(n))).collect();
+    let w: Vec<u64> = (0..m).map(|_| rng.below(1_000_000_000) as u64).collect();
     st.case();
-    let d = dijkstra(&g, 0);
-    let mut tight = vec![false; n];
-    tight[0] = true;
-    assert_eq!(d[&0], 0);
-    for u in 0..n {
-        if let Some(&du) = d.get(&u) {
-            for &(v, w) in &g[u] {
-                let dv = *d.get(&v).expect("successor of a reached vertex is reached");
-                assert!(dv <= du + w, "edge {u}->{v} can still be relaxed");
-                tight[v] |= dv == du + w;
-            }
+    let sp = dijkstra(&Csr::directed(n, &edges), &w, 0);
+    assert!(sp.reachable(0) && sp.dist[0] == 0);
+    // Triangle inequality over every edge from a reachable tail.
+    for (e, &(u, v)) in edges.iter().enumerate() {
+        if sp.reachable(u) {
+            assert!(sp.reachable(v) && sp.dist[v] <= sp.dist[u] + w[e]);
         }
     }
-    assert!(d.keys().all(|&v| tight[v]), "every reached vertex needs a tight predecessor");
-    st.ops(n + 600_000);
+    st.ops(m);
     st.done();
 }

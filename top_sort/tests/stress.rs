@@ -1,7 +1,8 @@
 //! Stress test: `topological_sort` returns a valid order exactly when the graph is acyclic
 //! (acyclicity decided independently by a colouring DFS).
 
-use top_sort::topological_sort;
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use top_sort::{is_acyclic, topological_sort};
 
 #[path = "../../stress_common.rs"]
 mod common;
@@ -78,12 +79,12 @@ fn valid_order_iff_acyclic() {
         }
         let expect_cycle = has_cycle(&g);
         if expect_cycle { cyclic += 1 } else { dags += 1 }
-        match topological_sort(&g) {
-            Some(order) => {
-                assert!(!expect_cycle, "returned an order for a cyclic graph, case {case}: {g:?}");
-                assert!(is_valid_order(&g, &order), "invalid order {order:?}, case {case}: {g:?}");
-            }
-            None => assert!(expect_cycle, "returned None for a DAG, case {case}: {g:?}"),
+        assert_eq!(is_acyclic(&g), !expect_cycle, "is_acyclic, case {case}: {g:?}");
+        if expect_cycle {
+            assert!(catch_unwind(AssertUnwindSafe(|| topological_sort(&g))).is_err(), "must panic on a cyclic graph, case {case}: {g:?}");
+        } else {
+            let order = topological_sort(&g);
+            assert!(is_valid_order(&g, &order), "invalid order {order:?}, case {case}: {g:?}");
         }
         st.case();
         st.ops(1);
@@ -107,13 +108,13 @@ fn large_dag_and_single_back_edge() {
         }
     }
     st.case();
-    let order = topological_sort(&g).expect("edges only go from smaller to larger ids");
+    let order = topological_sort(&g);
     assert!(is_valid_order(&g, &order));
     // Closing a cycle with one back edge must be detected.
     g[n - 1].push(0);
     g[0].push(1);
     g[1].push(n - 1);
-    assert!(topological_sort(&g).is_none());
+    assert!(!is_acyclic(&g));
     st.ops(2 * n);
     st.done();
 }

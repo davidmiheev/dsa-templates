@@ -1,0 +1,13 @@
+[package]
+name = "modmatrix"
+version = "0.1.0"
+edition = "2021"
+description = "Dense matrices over a prime field: determinant (Gaussian elimination)."
+publish = false
+
+[dependencies]
+modint = { path = "../modint" }
+
+[lib]
+name = "modmatrix"
+path = "src/lib.rs"

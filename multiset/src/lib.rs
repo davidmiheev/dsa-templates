@@ -52,14 +52,20 @@ impl<T: Ord + Clone> MultiSet<T> {
         self.elems.contains_key(el)
     }
 
-    /// Smallest element (by `Ord`), or `None` if the multiset is empty.
-    pub fn first(&self) -> Option<T> {
-        self.elems.keys().next().cloned()
+    /// Smallest element (by `Ord`).
+    ///
+    /// # Panics
+    /// Panics if the multiset is empty.
+    pub fn first(&self) -> T {
+        self.elems.keys().next().cloned().expect("first() of an empty multiset")
     }
 
-    /// Largest element (by `Ord`), or `None` if the multiset is empty.
-    pub fn last(&self) -> Option<T> {
-        self.elems.keys().next_back().cloned()
+    /// Largest element (by `Ord`).
+    ///
+    /// # Panics
+    /// Panics if the multiset is empty.
+    pub fn last(&self) -> T {
+        self.elems.keys().next_back().cloned().expect("last() of an empty multiset")
     }
 
     /// Iterate over `(element, count)` pairs in ascending order.

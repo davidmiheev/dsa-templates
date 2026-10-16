@@ -1,0 +1,14 @@
+[package]
+name = "incremental_msf"
+version = "0.1.0"
+edition = "2021"
+description = "Minimum spanning forest under edge insertions, via a link-cut tree over vertices and edge nodes."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+link_cut_tree = { path = "../link_cut_tree" }
+
+[lib]
+name = "incremental_msf"
+path = "src/lib.rs"

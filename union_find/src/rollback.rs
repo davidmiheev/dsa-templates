@@ -102,3 +102,101 @@ impl RollbackUnionFind {
         }
     }
 }
+
+/// [`RollbackUnionFind`] whose components carry a **sum** of per-vertex values that can be
+/// changed point-wise: `add(v, x)` adds `x` to the value of `v`, `sum(v)` is the total over the
+/// component of `v`, and `rollback` restores both the partition and the sums.
+///
+/// Every union-find node keeps the sum of the vertices below it in the union tree, so a point
+/// update walks up the (`O(log n)`-deep) parent chain; undoing a union just subtracts the
+/// absorbed root's sum again, which already includes every update made while it was absorbed.
+///
+/// # Example
+///
+/// ```
+/// use union_find::RollbackSumUnionFind;
+///
+/// let mut uf = RollbackSumUnionFind::new(&[1i64, 2, 3]);
+/// let before = uf.snapshot();
+/// uf.union(0, 1);
+/// uf.add(1, 10);
+/// assert_eq!(uf.sum(0), 13);
+/// uf.rollback(before);
+/// assert_eq!((uf.sum(0), uf.sum(1)), (1, 12)); // the update to vertex 1 is kept
+/// ```
+#[derive(Clone, Debug)]
+pub struct RollbackSumUnionFind<T> {
+    uf: RollbackUnionFind,
+    sum: Vec<T>,
+}
+
+impl<T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>> RollbackSumUnionFind<T> {
+    /// One singleton component per entry of `values`.
+    pub fn new(values: &[T]) -> Self {
+        Self { uf: RollbackUnionFind::new(values.len()), sum: values.to_vec() }
+    }
+
+    pub fn find(&self, x: usize) -> usize {
+        self.uf.find(x)
+    }
+
+    pub fn same(&self, x: usize, y: usize) -> bool {
+        self.uf.same(x, y)
+    }
+
+    pub fn size(&self, x: usize) -> usize {
+        self.uf.size(x)
+    }
+
+    pub fn components(&self) -> usize {
+        self.uf.components()
+    }
+
+    /// Sum of the values in the component of `x`.
+    pub fn sum(&self, x: usize) -> T {
+        self.sum[self.uf.find(x)]
+    }
+
+    /// Add `delta` to the value of vertex `x`.
+    pub fn add(&mut self, x: usize, delta: T) {
+        let mut v = x;
+        loop {
+            self.sum[v] = self.sum[v] + delta;
+            let p = self.uf.parent_or_size[v];
+            if p < 0 {
+                break;
+            }
+            v = p as usize;
+        }
+    }
+
+    /// Merge the components of `x` and `y`; returns whether they were different.
+    pub fn union(&mut self, x: usize, y: usize) -> bool {
+        if !self.uf.union(x, y) {
+            return false;
+        }
+        let &(absorbed, root, _) = self.uf.history.last().unwrap();
+        self.sum[root as usize] = self.sum[root as usize] + self.sum[absorbed as usize];
+        true
+    }
+
+    /// A marker for the current state, to pass to [`Self::rollback`].
+    pub fn snapshot(&self) -> usize {
+        self.uf.snapshot()
+    }
+
+    /// Undo the most recent successful union.
+    pub fn undo(&mut self) {
+        let &(absorbed, root, _) = self.uf.history.last().expect("nothing to undo");
+        self.sum[root as usize] = self.sum[root as usize] - self.sum[absorbed as usize];
+        self.uf.undo();
+    }
+
+    /// Undo successful unions until the state of `snapshot` is restored.
+    pub fn rollback(&mut self, snapshot: usize) {
+        assert!(snapshot <= self.uf.history.len(), "snapshot {snapshot} is from the future");
+        while self.uf.history.len() > snapshot {
+            self.undo();
+        }
+    }
+}

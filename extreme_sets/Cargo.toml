@@ -1,0 +1,10 @@
+[package]
+name = "extreme_sets"
+version = "0.1.0"
+edition = "2021"
+description = "Tree of extreme vertex sets of a weighted undirected graph (Nagamochi-Ibaraki style contraction)."
+publish = false
+
+[lib]
+name = "extreme_sets"
+path = "src/lib.rs"

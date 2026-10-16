@@ -1,0 +1,13 @@
+[package]
+name = "chordal_graph"
+version = "0.1.0"
+edition = "2021"
+description = "Chordal graph recognition: maximum cardinality search, perfect elimination orderings, induced-cycle certificates."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "chordal_graph"
+path = "src/lib.rs"

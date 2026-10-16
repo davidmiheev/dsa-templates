@@ -1,0 +1,10 @@
+[package]
+name = "steiner_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Minimum Steiner tree (Dreyfus-Wagner) with edge recovery."
+publish = false
+
+[lib]
+name = "steiner_tree"
+path = "src/lib.rs"
