@@ -1,0 +1,13 @@
+[package]
+name = "range_sort_sequence"
+version = "0.1.0"
+edition = "2021"
+description = "A sequence with range sort by key, point replace and range monoid fold (sorted runs as mergeable segment trees)."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "range_sort_sequence"
+path = "src/lib.rs"

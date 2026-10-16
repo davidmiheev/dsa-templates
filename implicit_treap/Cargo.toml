@@ -1,0 +1,13 @@
+[package]
+name = "implicit_treap"
+version = "0.1.0"
+edition = "2021"
+description = "Implicit treap: a sequence with insert, remove, reverse, range actions and range queries."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "implicit_treap"
+path = "src/lib.rs"

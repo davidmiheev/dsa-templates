@@ -1,0 +1,10 @@
+[package]
+name = "segment_tree_beats"
+version = "0.1.0"
+edition = "2021"
+description = "Segment tree beats: range chmin / chmax / add with range sum, min and max."
+publish = false
+
+[lib]
+name = "segment_tree_beats"
+path = "src/lib.rs"

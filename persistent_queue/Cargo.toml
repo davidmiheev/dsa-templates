@@ -1,0 +1,10 @@
+[package]
+name = "persistent_queue"
+version = "0.1.0"
+edition = "2021"
+description = "Fully persistent queue: every push or pop yields a new version, old versions stay usable."
+publish = false
+
+[lib]
+name = "persistent_queue"
+path = "src/lib.rs"

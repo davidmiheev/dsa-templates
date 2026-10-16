@@ -1,0 +1,13 @@
+[package]
+name = "seaweed"
+version = "0.1.0"
+edition = "2021"
+description = "Seaweed (sticky braid) permutation product and offline longest-increasing-subsequence queries on subarrays."
+publish = false
+
+[dependencies]
+fenwick = { path = "../fenwick" }
+
+[lib]
+name = "seaweed"
+path = "src/lib.rs"

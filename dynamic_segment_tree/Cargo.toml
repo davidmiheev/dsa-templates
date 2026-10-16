@@ -1,0 +1,13 @@
+[package]
+name = "dynamic_segment_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Segment trees over huge index ranges (up to 2^32) that only allocate the nodes they touch."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "dynamic_segment_tree"
+path = "src/lib.rs"

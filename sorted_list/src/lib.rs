@@ -1,210 +1,171 @@
-//! A treap-based sorted list.
+//! A bucketed sorted list (sorted multiset with rank queries), generic over `T: Ord + Copy`.
 //!
-//! Supports the following operations, each `O(log n)`:
-//! - [`SortedList::insert`] / [`SortedList::remove`]
-//! - [`SortedList::bisect_left`] / [`SortedList::bisect_right`]
-//! - [`SortedList::get`]
+//! Elements live in sorted `Vec` chunks ("buckets") of at most `2 * LOAD` elements, plus a
+//! contiguous array with each bucket's maximum. This is the structure behind Python's
+//! `sortedcontainers.SortedList`: a lookup is a binary search over the maxima followed by a
+//! binary search inside one bucket, an insert or remove shifts at most `2 * LOAD` elements in
+//! one cache-friendly `memmove`, and rank queries add up the sizes of the buckets before.
+//! Everything is `O(log n + sqrt n)`-ish in theory but ~hundreds of nanoseconds in practice,
+//! several times faster than a pointer-based balanced tree for `n` up to millions.
 //!
-//! [`SortedList::len`] and [`SortedList::is_empty`] are `O(1)`.
+//! Duplicates are allowed. Operations:
+//! - [`SortedList::insert`] / [`SortedList::remove`] (one occurrence) / [`SortedList::contains`]
+//! - [`SortedList::bisect_left`] / [`SortedList::bisect_right`] (ranks)
+//! - [`SortedList::get`] (k-th smallest, asserts the index)
 //!
-//! Implementation note: nodes are stored in a flat `Vec<Node>` addressed by
-//! 1-based indices (0 = none). Removed nodes go to a `free_stack` so the
-//! underlying storage can be reused without growing the array.
+//! # Example
+//!
+//! ```
+//! use sorted_list::SortedList;
+//!
+//! let mut s: SortedList<i64> = [5, 3, 8, 3].into_iter().collect();
+//! s.insert(1);
+//! assert_eq!(s.get(0), 1);
+//! assert_eq!(s.bisect_left(3), 1);  // keys < 3
+//! assert_eq!(s.bisect_right(3), 3); // keys <= 3
+//! assert!(s.remove(3) && s.contains(3));
+//! assert_eq!(s.len(), 4);
+//! ```
 
-use std::cmp::Ordering;
+/// Target bucket size; a bucket is split when it grows past `2 * LOAD`.
+const LOAD: usize = 512;
 
-#[derive(Debug)]
-struct Node {
-    key: i64,
-    priority: u32,
-    left: usize,
-    right: usize,
-    size: usize,
+/// Sorted multiset of `T` with `O(log n + sqrt n)` insert, remove, rank and k-th queries.
+#[derive(Clone, Debug)]
+pub struct SortedList<T> {
+    buckets: Vec<Vec<T>>,
+    /// `maxes[i]` is the last (largest) element of `buckets[i]`; buckets are never empty.
+    maxes: Vec<T>,
+    len: usize,
 }
 
-impl Node {
-    fn new(key: i64, seed: &mut u32) -> Self {
-        *seed ^= *seed << 13;
-        *seed ^= *seed >> 17;
-        *seed ^= *seed << 5;
-        Self {
-            key,
-            priority: *seed,
-            left: 0,
-            right: 0,
-            size: 1,
-        }
-    }
-
-    fn update(idx: usize, nodes: &mut [Node]) {
-        if idx == 0 {
-            return;
-        }
-        let l = nodes[idx - 1].left;
-        let r = nodes[idx - 1].right;
-        let l_size = if l == 0 { 0 } else { nodes[l - 1].size };
-        let r_size = if r == 0 { 0 } else { nodes[r - 1].size };
-        nodes[idx - 1].size = 1 + l_size + r_size;
+impl<T: Ord + Copy> Default for SortedList<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-/// Treap-backed sorted list of `i64` keys with multiplicity.
-pub struct SortedList {
-    nodes: Vec<Node>,
-    root: usize,
-    seed: u32,
-    free_stack: Vec<usize>,
+impl<T: Ord + Copy> FromIterator<T> for SortedList<T> {
+    /// Build from any iterator in `O(n log n)` (a sort and one pass).
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut v: Vec<T> = iter.into_iter().collect();
+        v.sort_unstable();
+        let len = v.len();
+        let buckets: Vec<Vec<T>> = v.chunks(LOAD).map(|c| c.to_vec()).collect();
+        let maxes = buckets.iter().map(|b| *b.last().unwrap()).collect();
+        SortedList { buckets, maxes, len }
+    }
 }
 
-impl SortedList {
+impl<T: Ord + Copy> SortedList<T> {
     /// Construct an empty sorted list.
     pub fn new() -> Self {
-        Self {
-            nodes: Vec::with_capacity(1024 * 8),
-            root: 0,
-            seed: 12345,
-            free_stack: Vec::new(),
-        }
-    }
-
-    /// Split by key. If `inclusive` is true, keys == key go to the left tree.
-    /// Returns `(left_idx, right_idx)` where indices are 1-based (0 means None).
-    fn split(&mut self, node_idx: usize, key: i64, inclusive: bool) -> (usize, usize) {
-        if node_idx == 0 {
-            return (0, 0);
-        }
-
-        let n_key = self.nodes[node_idx - 1].key;
-        let go_left = if inclusive { n_key >= key } else { n_key > key };
-
-        if go_left {
-            let left_child = self.nodes[node_idx - 1].left;
-            let (l, r) = self.split(left_child, key, inclusive);
-            self.nodes[node_idx - 1].left = r;
-            Node::update(node_idx, &mut self.nodes);
-            (l, node_idx)
-        } else {
-            let right_child = self.nodes[node_idx - 1].right;
-            let (l, r) = self.split(right_child, key, inclusive);
-            self.nodes[node_idx - 1].right = l;
-            Node::update(node_idx, &mut self.nodes);
-            (node_idx, r)
-        }
-    }
-
-    /// Merge two trees where all keys in `l` are less than all keys in `r`.
-    fn merge(&mut self, l: usize, r: usize) -> usize {
-        if l == 0 || r == 0 {
-            return if l == 0 { r } else { l };
-        }
-
-        if self.nodes[l - 1].priority > self.nodes[r - 1].priority {
-            let l_right = self.nodes[l - 1].right;
-            self.nodes[l - 1].right = self.merge(l_right, r);
-            Node::update(l, &mut self.nodes);
-            l
-        } else {
-            let r_left = self.nodes[r - 1].left;
-            self.nodes[r - 1].left = self.merge(l, r_left);
-            Node::update(r, &mut self.nodes);
-            r
-        }
+        SortedList { buckets: Vec::new(), maxes: Vec::new(), len: 0 }
     }
 
     /// Insert a key. Duplicates are allowed.
-    pub fn insert(&mut self, key: i64) {
-        let (l, r) = self.split(self.root, key, true);
-        let node_idx = if let Some(idx) = self.free_stack.pop() {
-            self.nodes[idx - 1] = Node::new(key, &mut self.seed);
-            idx
-        } else {
-            self.nodes.push(Node::new(key, &mut self.seed));
-            self.nodes.len()
-        };
-        let merged_left = self.merge(l, node_idx);
-        self.root = self.merge(merged_left, r);
+    pub fn insert(&mut self, key: T) {
+        self.len += 1;
+        if self.buckets.is_empty() {
+            self.buckets.push(vec![key]);
+            self.maxes.push(key);
+            return;
+        }
+        // First bucket whose maximum is >= key (or the last bucket for a new global maximum).
+        let b = self.maxes.partition_point(|&m| m < key).min(self.buckets.len() - 1);
+        let bucket = &mut self.buckets[b];
+        let pos = bucket.partition_point(|&x| x < key);
+        bucket.insert(pos, key);
+        if pos + 1 == bucket.len() {
+            self.maxes[b] = key;
+        }
+        if bucket.len() > 2 * LOAD {
+            let right = bucket.split_off(LOAD);
+            self.maxes[b] = *self.buckets[b].last().unwrap();
+            self.maxes.insert(b + 1, *right.last().unwrap());
+            self.buckets.insert(b + 1, right);
+        }
     }
 
-    /// Remove one occurrence of `key`.
-    pub fn remove(&mut self, key: i64) {
-        let (l, mid_r) = self.split(self.root, key, true);
-        let (mid, r) = self.split(mid_r, key + 1, true);
-        if mid != 0 {
-            let m_left = self.nodes[mid - 1].left;
-            let m_right = self.nodes[mid - 1].right;
-            let new_mid = self.merge(m_left, m_right);
-            self.free_stack.push(mid);
-            let merged_left = self.merge(l, new_mid);
-            self.root = self.merge(merged_left, r);
+    /// Remove one occurrence of `key`. Returns whether it was present.
+    pub fn remove(&mut self, key: T) -> bool {
+        let b = self.maxes.partition_point(|&m| m < key);
+        if b == self.buckets.len() {
+            return false;
+        }
+        let bucket = &mut self.buckets[b];
+        let pos = bucket.partition_point(|&x| x < key);
+        if bucket[pos] != key {
+            return false;
+        }
+        bucket.remove(pos);
+        self.len -= 1;
+        if bucket.is_empty() {
+            self.buckets.remove(b);
+            self.maxes.remove(b);
         } else {
-            self.root = self.merge(l, r);
+            self.maxes[b] = *bucket.last().unwrap();
+        }
+        true
+    }
+
+    /// Whether `key` occurs at least once.
+    pub fn contains(&self, key: T) -> bool {
+        let b = self.maxes.partition_point(|&m| m < key);
+        b < self.buckets.len() && {
+            let bucket = &self.buckets[b];
+            bucket[bucket.partition_point(|&x| x < key)] == key
         }
     }
 
     /// Number of keys strictly less than `key`.
-    pub fn bisect_left(&self, key: i64) -> usize {
-        let mut curr = self.root;
-        let mut rank = 0;
-        while curr != 0 {
-            let node = &self.nodes[curr - 1];
-            if node.key >= key {
-                curr = node.left;
-            } else {
-                let l_size = if node.left == 0 { 0 } else { self.nodes[node.left - 1].size };
-                rank += 1 + l_size;
-                curr = node.right;
-            }
+    pub fn bisect_left(&self, key: T) -> usize {
+        let b = self.maxes.partition_point(|&m| m < key);
+        let before: usize = self.buckets[..b].iter().map(Vec::len).sum();
+        match self.buckets.get(b) {
+            Some(bucket) => before + bucket.partition_point(|&x| x < key),
+            None => before,
         }
-        rank
     }
 
     /// Number of keys less than or equal to `key`.
-    pub fn bisect_right(&self, key: i64) -> usize {
-        let mut curr = self.root;
-        let mut rank = 0;
-        while curr != 0 {
-            let node = &self.nodes[curr - 1];
-            if node.key > key {
-                curr = node.left;
-            } else {
-                let l_size = if node.left == 0 { 0 } else { self.nodes[node.left - 1].size };
-                rank += 1 + l_size;
-                curr = node.right;
-            }
+    pub fn bisect_right(&self, key: T) -> usize {
+        let b = self.maxes.partition_point(|&m| m <= key);
+        let before: usize = self.buckets[..b].iter().map(Vec::len).sum();
+        match self.buckets.get(b) {
+            Some(bucket) => before + bucket.partition_point(|&x| x <= key),
+            None => before,
         }
-        rank
     }
 
-    /// Get the element at `index` (0-based), or `None` if out of bounds.
-    pub fn get(&self, index: usize) -> Option<i64> {
-        let mut curr = self.root;
-        let mut i = index;
-        while curr != 0 {
-            let node = &self.nodes[curr - 1];
-            let left_size = if node.left == 0 { 0 } else { self.nodes[node.left - 1].size };
-            match i.cmp(&left_size) {
-                Ordering::Less => curr = node.left,
-                Ordering::Equal => return Some(node.key),
-                Ordering::Greater => {
-                    i -= left_size + 1;
-                    curr = node.right;
-                }
+    /// The element at `index` (0-based) in sorted order.
+    ///
+    /// # Panics
+    /// Panics if `index >= len()`.
+    pub fn get(&self, index: usize) -> T {
+        assert!(index < self.len, "index {index} out of range for length {}", self.len);
+        let mut rest = index;
+        for bucket in &self.buckets {
+            if rest < bucket.len() {
+                return bucket[rest];
             }
+            rest -= bucket.len();
         }
-        None
+        unreachable!("index was checked against len")
+    }
+
+    /// All elements in ascending order.
+    pub fn iter(&self) -> impl Iterator<Item = T> + '_ {
+        self.buckets.iter().flatten().copied()
     }
 
     /// Number of elements in the list (with multiplicities).
     pub fn len(&self) -> usize {
-        if self.root == 0 {
-            0
-        } else {
-            self.nodes[self.root - 1].size
-        }
+        self.len
     }
 
     /// Whether the list is empty.
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.len == 0
     }
 }
