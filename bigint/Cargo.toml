@@ -1,0 +1,13 @@
+[package]
+name = "bigint"
+version = "0.1.0"
+edition = "2021"
+description = "Arbitrary-precision integers in a small base: addition, NTT multiplication, Newton division, decimal / hexadecimal conversion."
+publish = false
+
+[dependencies]
+convolution = { path = "../convolution" }
+
+[lib]
+name = "bigint"
+path = "src/lib.rs"
