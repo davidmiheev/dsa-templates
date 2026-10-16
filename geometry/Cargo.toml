@@ -1,0 +1,13 @@
+[package]
+name = "geometry"
+version = "0.1.0"
+edition = "2021"
+description = "Exact integer computational geometry: convex hull, farthest / closest pairs, minimum enclosing circle, argument sort, Manhattan and Euclidean MST, convex layers, points in triangles."
+publish = false
+
+[dependencies]
+union_find = { path = "../union_find" }
+
+[lib]
+name = "geometry"
+path = "src/lib.rs"
