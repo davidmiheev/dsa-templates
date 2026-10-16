@@ -6,6 +6,7 @@
 //! * [`factorize`]: prime factorisation with multiplicities, sorted, via trial division by small
 //!   primes and Brent's variant of Pollard's rho; expected `O(n^{1/4})`.
 //! * [`primitive_root`]: a generator of the multiplicative group modulo a prime.
+//! * [`mod_sqrt`]: a square root modulo a prime (Tonelli–Shanks), [`NONE`] if there is none.
 //!
 //! # Example
 //!
@@ -182,4 +183,45 @@ pub fn primitive_root(p: u64) -> u64 {
     (2..p)
         .find(|&g| factors.iter().all(|&(q, _)| pow_mod(g, (p - 1) / q, p) != 1))
         .expect("every prime has a primitive root")
+}
+
+/// Returned by [`mod_sqrt`] when the argument is a non-residue.
+pub const NONE: u64 = u64::MAX;
+
+/// A square root of `a` modulo the odd or even prime `p` (Tonelli–Shanks), or [`NONE`] if `a` is
+/// not a quadratic residue. The root returned is one of the two (`r` and `p - r`).
+///
+/// # Panics
+/// Panics if `p` is not prime (checked only cheaply, via `p >= 2`).
+pub fn mod_sqrt(a: u64, p: u64) -> u64 {
+    assert!(p >= 2, "modulus must be a prime");
+    let a = a % p;
+    if a == 0 || p == 2 {
+        return a;
+    }
+    if pow_mod(a, (p - 1) / 2, p) != 1 {
+        return NONE;
+    }
+    let (mut q, mut s) = (p - 1, 0u32);
+    while q.is_multiple_of(2) {
+        q /= 2;
+        s += 1;
+    }
+    let z = (2..p).find(|&z| pow_mod(z, (p - 1) / 2, p) == p - 1).expect("a non-residue exists");
+    let (mut m, mut c) = (s, pow_mod(z, q, p));
+    let (mut t, mut r) = (pow_mod(a, q, p), pow_mod(a, q.div_ceil(2), p));
+    while t != 1 {
+        let mut i = 0;
+        let mut x = t;
+        while x != 1 {
+            x = mul_mod(x, x, p);
+            i += 1;
+        }
+        let b = pow_mod(c, 1u64 << (m - i - 1), p);
+        m = i;
+        c = mul_mod(b, b, p);
+        t = mul_mod(t, c, p);
+        r = mul_mod(r, b, p);
+    }
+    r
 }
