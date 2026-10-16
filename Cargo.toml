@@ -80,6 +80,8 @@ members = [
     "set_power_series",
     "divisor_transform",
     "min_plus",
+    "multiplicative_convolution",
+    "multivariate_convolution",
 ]
 
 [workspace.package]
