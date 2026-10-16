@@ -1,0 +1,13 @@
+[package]
+name = "two_sat"
+version = "0.1.0"
+edition = "2021"
+description = "2-SAT by strongly connected components."
+publish = false
+
+[dependencies]
+scc = { path = "../scc" }
+
+[lib]
+name = "two_sat"
+path = "src/lib.rs"

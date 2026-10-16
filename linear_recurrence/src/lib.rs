@@ -1,7 +1,11 @@
-//! Berlekamp–Massey over `Z/MZ` (prime `M`).
+//! Linear recurrences over `Z/MZ` (prime `M`; the polynomial routines need an NTT prime).
 //!
-//! [`berlekamp_massey`] returns the shortest `c_1, ..., c_L` with
-//! `s_n = c_1 s_{n-1} + ... + c_L s_{n-L}` for all `n >= L`, in `O(n L)`.
+//! * [`berlekamp_massey`] returns the shortest `c_1, ..., c_L` with
+//!   `s_n = c_1 s_{n-1} + ... + c_L s_{n-L}` for all `n >= L`, in `O(n L)`.
+//! * [`kth_term`]: `s_k` by the Bostan–Mori algorithm, `O(L log L log k)`.
+//! * [`consecutive_terms`]: `s_k, ..., s_{k+m-1}` for a huge `k`: `x^k` modulo the characteristic
+//!   polynomial gives `s_k, ..., s_{k+L-1}` through one correlation, then the recurrence is
+//!   continued by a power series division.
 //!
 //! # Example
 //!
@@ -15,6 +19,10 @@
 //! ```
 
 use modint::StaticModInt;
+
+mod terms;
+
+pub use terms::{consecutive_terms, kth_term};
 
 /// The shortest linear recurrence `s_n = sum_{i=1}^{L} c_i s_{n-i}` (`n >= L`) satisfied by `s`,
 /// returned as `[c_1, ..., c_L]`; empty for the zero sequence.
