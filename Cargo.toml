@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "geometry",
     "strings",
     "combinatorics",
     "linear_recurrence",
