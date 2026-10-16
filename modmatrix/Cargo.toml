@@ -2,11 +2,12 @@
 name = "modmatrix"
 version = "0.1.0"
 edition = "2021"
-description = "Dense matrices over a prime field: determinant (Gaussian elimination)."
+description = "Dense matrices over a prime field: product, power, determinant, rank, inverse, adjugate, linear systems, characteristic polynomial, Pfaffian, hafnian, sparse determinant, determinant modulo any integer."
 publish = false
 
 [dependencies]
 modint = { path = "../modint" }
+linear_recurrence = { path = "../linear_recurrence" }
 
 [lib]
 name = "modmatrix"

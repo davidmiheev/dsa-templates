@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "linear_recurrence",
+    "bit_matrix",
     "sublinear",
     "prime_sieve",
     "stern_brocot",
