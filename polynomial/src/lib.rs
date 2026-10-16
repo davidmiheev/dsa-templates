@@ -9,6 +9,8 @@
 //! * [`special`]: Taylor shift, shifting sampling points, geometric-sequence evaluation and
 //!   interpolation, prefix sums of a polynomial, products of many polynomials.
 //! * [`multipoint`]: subproduct tree, multipoint evaluation, interpolation, Newton basis.
+//! * [`gcd`]: polynomial gcd (schoolbook and half-gcd), extended gcd, inverse modulo a polynomial.
+//! * [`roots`]: roots of a polynomial over the field (distinct-degree gcd and random splitting).
 //! * [`fps`]: [`fps::mul`], [`fps::inv`], [`fps::log`], [`fps::exp`], [`fps::pow`], [`fps::sqrt`],
 //!   derivative / integral, division with remainder.
 //!
@@ -27,7 +29,9 @@
 //! ```
 
 pub mod fps;
+pub mod gcd;
 pub mod multipoint;
+pub mod roots;
 pub mod sparse;
 pub mod special;
 

@@ -298,3 +298,102 @@ fn multipoint_and_interpolation() {
         assert_eq!(total, g, "newton case {case}");
     }
 }
+
+#[test]
+fn gcd_and_modular_inverse() {
+    use polynomial::gcd::*;
+    let mut rng = Rng::new(123);
+    for case in 0..400 * scale() {
+        // sizes straddle the half-gcd threshold; a shared factor half of the time
+        let big = case % 8 == 0;
+        let (na, nb) = if big { (rng.range(100, 400) as usize, rng.range(100, 400) as usize) } else { (rng.range(1, 30) as usize, rng.range(1, 30) as usize) };
+        let mut a = random(&mut rng, na);
+        let mut b = random(&mut rng, nb);
+        if rng.chance(1, 2) {
+            let cl = rng.range(1, 6) as usize;
+            let common = random(&mut rng, cl);
+            a = naive_mul(&a, &common);
+            b = naive_mul(&b, &common);
+        }
+        let want = gcd_naive(&a, &b);
+        let (g, s, t) = ext_gcd(&a, &b);
+        assert_eq!(g, want, "gcd case {case}");
+        let mut comb = {
+            let x = naive_mul(&s, &a);
+            let y = naive_mul(&t, &b);
+            let mut r = vec![Mint::zero(); x.len().max(y.len())];
+            for (i, &c) in x.iter().enumerate() { r[i] += c; }
+            for (i, &c) in y.iter().enumerate() { r[i] += c; }
+            r
+        };
+        fps::trim(&mut comb);
+        assert_eq!(comb, g, "bezout case {case}");
+        // inverse modulo a polynomial
+        let h = inverse_mod(&b, &a);
+        if want.len() == 1 || a.len() == 1 {
+            if !h.is_empty() && a.len() > 1 {
+                let (_, mut r) = fps::div_rem(&naive_mul(&h, &b), &a);
+                fps::trim(&mut r);
+                assert_eq!(r, vec![Mint::one()], "inverse case {case}");
+            }
+        } else {
+            assert!(h.is_empty(), "inverse must not exist when the gcd is non-trivial (case {case})");
+        }
+    }
+}
+
+#[test]
+fn root_finding() {
+    use polynomial::roots::find_roots;
+    let mut rng = Rng::new(31);
+    // a quadratic non-residue gives the irreducible x^2 - nr
+    let nr = (2..).map(Mint::from).find(|&z: &Mint| z.pow(998_244_352 / 2) == -Mint::one()).unwrap();
+    for case in 0..60 * scale() {
+        let k = rng.range(0, 12) as usize;
+        let mut want: Vec<Mint> = (0..k).map(|_| Mint::new(rng.next_u64())).collect();
+        if rng.chance(1, 4) {
+            want.push(Mint::zero());
+        }
+        let mut f = vec![Mint::new(1 + rng.next_u64() % 998_244_352)];
+        for &r in &want {
+            f = naive_mul(&f, &[-r, Mint::one()]);
+        }
+        for _ in 0..rng.range(0, 3) {
+            f = naive_mul(&f, &[-nr, Mint::zero(), Mint::one()]);
+        }
+        if rng.chance(1, 3) && !want.is_empty() {
+            f = naive_mul(&f, &[-want[0], Mint::one()]); // a repeated root
+        }
+        let mut expect = want.clone();
+        expect.sort_by_key(|r| r.val());
+        expect.dedup();
+        assert_eq!(find_roots(&f), expect, "case {case}");
+    }
+}
+
+#[test]
+fn bivariate_inverse() {
+    let mut rng = Rng::new(8);
+    for case in 0..150 * scale() {
+        let (n, m) = (rng.range(1, 12) as usize, rng.range(1, 12) as usize);
+        let mut f = random(&mut rng, n * m);
+        if f[0].val() == 0 {
+            f[0] = Mint::one();
+        }
+        let g = fps::inv_bivariate(&f, n, m);
+        // multiply back naively
+        let mut prod = vec![Mint::zero(); n * m];
+        for i in 0..n {
+            for j in 0..m {
+                for k in 0..=i {
+                    for l in 0..=j {
+                        prod[i * m + j] += f[k * m + l] * g[(i - k) * m + (j - l)];
+                    }
+                }
+            }
+        }
+        for (idx, &v) in prod.iter().enumerate() {
+            assert_eq!(v, if idx == 0 { Mint::one() } else { Mint::zero() }, "case {case} {n}x{m} idx {idx}");
+        }
+    }
+}

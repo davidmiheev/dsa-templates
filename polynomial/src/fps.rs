@@ -217,3 +217,56 @@ pub fn div_rem<const M: u32>(f: &[Mint<M>], g: &[Mint<M>]) -> (Vec<Mint<M>>, Vec
     trim(&mut r);
     (q, r)
 }
+
+/// Product of two bivariate polynomials stored row-major (`rows x cols`, entry `(i, j)` is the
+/// coefficient of `x^i y^j`), truncated to `out_rows` rows and `cols` columns, by Kronecker
+/// substitution `x = y^(2 cols - 1)`.
+pub fn mul_bivariate_trunc<const M: u32>(
+    a: &[Mint<M>],
+    a_rows: usize,
+    b: &[Mint<M>],
+    b_rows: usize,
+    cols: usize,
+    out_rows: usize,
+) -> Vec<Mint<M>> {
+    let w = 2 * cols - 1;
+    let a_rows = a_rows.min(out_rows);
+    let b_rows = b_rows.min(out_rows);
+    let spread = |v: &[Mint<M>], rows: usize| -> Vec<Mint<M>> {
+        let mut out = vec![Mint::<M>::zero(); (rows - 1) * w + cols];
+        for i in 0..rows {
+            out[i * w..i * w + cols].copy_from_slice(&v[i * cols..(i + 1) * cols]);
+        }
+        out
+    };
+    let c = mul(&spread(a, a_rows), &spread(b, b_rows));
+    let mut out = vec![Mint::<M>::zero(); out_rows * cols];
+    for i in 0..out_rows {
+        for j in 0..cols {
+            if i * w + j < c.len() {
+                out[i * cols + j] = c[i * w + j];
+            }
+        }
+    }
+    out
+}
+
+/// `1 / f` for a bivariate series `f` (`rows x cols`, row-major, `f(0,0) != 0`) truncated to the
+/// same shape: Newton iteration in `x` with Kronecker-substituted products.
+pub fn inv_bivariate<const M: u32>(f: &[Mint<M>], rows: usize, cols: usize) -> Vec<Mint<M>> {
+    assert_eq!(f.len(), rows * cols, "shape mismatch");
+    assert!(f[0].val() != 0, "the constant term must be invertible");
+    let mut g = inv(&f[..cols], cols); // 1 row
+    let mut have = 1;
+    while have < rows {
+        let r = (2 * have).min(rows);
+        // g <- g (2 - f g) mod (x^r, y^cols)
+        let fg = mul_bivariate_trunc(&f[..r.min(rows) * cols], r, &g, have, cols, r);
+        let mut t: Vec<Mint<M>> = fg.iter().map(|&x| -x).collect();
+        t[0] += Mint::from(2u32);
+        g = mul_bivariate_trunc(&g, have, &t, r, cols, r);
+        have = r;
+    }
+    g.truncate(rows * cols);
+    g
+}
