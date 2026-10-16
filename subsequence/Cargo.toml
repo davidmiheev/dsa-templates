@@ -1,0 +1,10 @@
+[package]
+name = "subsequence"
+version = "0.1.0"
+edition = "2021"
+description = "Longest increasing subsequence with reconstruction."
+publish = false
+
+[lib]
+name = "subsequence"
+path = "src/lib.rs"

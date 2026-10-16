@@ -42,7 +42,7 @@ pub fn stirling1_fixed_k<const M: u32>(n: usize, k: usize) -> Vec<Z<M>> {
 }
 
 /// `j^e` for all `j <= n`, by a linear sieve (one modular power per prime).
-fn power_table<const M: u32>(n: usize, e: u64) -> Vec<Z<M>> {
+pub(crate) fn power_table<const M: u32>(n: usize, e: u64) -> Vec<Z<M>> {
     let mut pw = vec![Z::<M>::zero(); n + 1];
     let mut primes: Vec<usize> = Vec::new();
     let mut composite = vec![false; n + 1];

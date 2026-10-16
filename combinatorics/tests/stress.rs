@@ -303,3 +303,50 @@ fn increasing_sequences_between_bounds() {
     assert_eq!(got as u64, t.binom(n + m - 1, n));
     st.done();
 }
+
+#[test]
+fn exponential_polynomial_sums() {
+    let mut st = Stress::new("combinatorics/exp_sum");
+    for case in 0..3000 * scale() {
+        let mut rng = Rng::new(900_000 + case as u64);
+        let d = rng.below(12);
+        let r = match rng.below(5) {
+            0 => 0,
+            1 => 1,
+            2 => 2,
+            _ => rng.below(P as usize) as u32,
+        };
+        let n = if rng.chance(1, 2) { rng.below(40) as u64 } else { rng.next_u64() >> rng.below(60) };
+        // direct summation for small n, or for large n via the periodic structure: use n mod nothing
+        if n <= 60 {
+            let mut want = Z::zero();
+            let mut rp = Z::one();
+            for i in 0..n {
+                let term = if i == 0 { Z::new((d == 0) as u64) } else { Z::new(i).pow(d as u64) };
+                want += rp * term;
+                rp *= Z::new(r as u64);
+            }
+            assert_eq!(sum_exponential_times_polynomial::<P>(r, d, n), want.val(), "r={r} d={d} n={n}");
+        }
+        // consistency: S(n + 1) - S(n) = r^n n^d
+        let (a, b) = (sum_exponential_times_polynomial::<P>(r, d, n), sum_exponential_times_polynomial::<P>(r, d, n + 1));
+        let term = if n == 0 { Z::new((d == 0) as u64) } else { Z::new(n).pow(d as u64) } * Z::new(r as u64).pow(n);
+        assert_eq!(Z::new(b as u64) - Z::new(a as u64), term, "r={r} d={d} n={n}");
+        // the limit satisfies L = S(n) + r^n * (sum of the tail), checked through L - r L-like identity for d = 0
+        if r != 1 {
+            let l = sum_exponential_times_polynomial_limit::<P>(r, d);
+            if d == 0 {
+                // 1 / (1 - r)
+                let want = if r == 0 { Z::one() } else { (Z::one() - Z::new(r as u64)).inv() };
+                assert_eq!(l, want.val());
+            }
+        }
+        st.case();
+    }
+    // the limit for d = 1: r / (1 - r)^2 ; d = 2: r (1 + r) / (1 - r)^3
+    let r = Z::new(123_456_789);
+    let one_minus = Z::one() - r;
+    assert_eq!(sum_exponential_times_polynomial_limit::<P>(r.val(), 1), (r / (one_minus * one_minus)).val());
+    assert_eq!(sum_exponential_times_polynomial_limit::<P>(r.val(), 2), (r * (Z::one() + r) / (one_minus * one_minus * one_minus)).val());
+    st.done();
+}

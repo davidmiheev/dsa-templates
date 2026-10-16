@@ -2,11 +2,13 @@
 name = "linear_recurrence"
 version = "0.1.0"
 edition = "2021"
-description = "Berlekamp-Massey: the shortest linear recurrence of a sequence over a prime field."
+description = "Linear recurrences over a prime field: Berlekamp-Massey, the k-th term (Bostan-Mori) and consecutive terms at a huge index."
 publish = false
 
 [dependencies]
 modint = { path = "../modint" }
+polynomial = { path = "../polynomial" }
+convolution = { path = "../convolution" }
 
 [lib]
 name = "linear_recurrence"
