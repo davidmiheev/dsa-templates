@@ -1,0 +1,10 @@
+[package]
+name = "number_theory"
+version = "0.1.0"
+edition = "2021"
+description = "Primality testing, factorisation (Pollard rho), primitive roots and modular helpers for 64-bit integers."
+publish = false
+
+[lib]
+name = "number_theory"
+path = "src/lib.rs"

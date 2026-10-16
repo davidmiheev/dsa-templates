@@ -1,0 +1,14 @@
+[package]
+name = "multiplicative_convolution"
+version = "0.1.0"
+edition = "2021"
+description = "Convolutions over the multiplicative structure of Z/p and Z/2^n (discrete logarithms turn products into sums)."
+publish = false
+
+[dependencies]
+convolution = { path = "../convolution" }
+number_theory = { path = "../number_theory" }
+
+[lib]
+name = "multiplicative_convolution"
+path = "src/lib.rs"

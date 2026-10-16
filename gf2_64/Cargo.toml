@@ -1,0 +1,10 @@
+[package]
+name = "gf2_64"
+version = "0.1.0"
+edition = "2021"
+description = "The field GF(2^64) (x^64 + x^4 + x^3 + x + 1): carry-less multiplication and additive-FFT convolution."
+publish = false
+
+[lib]
+name = "gf2_64"
+path = "src/lib.rs"
