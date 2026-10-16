@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "strings",
     "combinatorics",
     "linear_recurrence",
     "bit_matrix",
