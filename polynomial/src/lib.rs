@@ -11,6 +11,7 @@
 //! * [`multipoint`]: subproduct tree, multipoint evaluation, interpolation, Newton basis.
 //! * [`gcd`]: polynomial gcd (schoolbook and half-gcd), extended gcd, inverse modulo a polynomial.
 //! * [`roots`]: roots of a polynomial over the field (distinct-degree gcd and random splitting).
+//! * [`composition`]: `f(g(x))` and the compositional inverse in `O(n log^2 n)` (Kinoshita–Li).
 //! * [`fps`]: [`fps::mul`], [`fps::inv`], [`fps::log`], [`fps::exp`], [`fps::pow`], [`fps::sqrt`],
 //!   derivative / integral, division with remainder.
 //!
@@ -28,6 +29,7 @@
 //! assert_eq!(fps::exp(&fps::log(&f, 5), 5), f);
 //! ```
 
+pub mod composition;
 pub mod fps;
 pub mod gcd;
 pub mod multipoint;

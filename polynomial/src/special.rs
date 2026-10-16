@@ -35,8 +35,8 @@ pub fn taylor_shift<const M: u32>(f: &[Mint<M>], c: Mint<M>) -> Vec<Mint<M>> {
     let a: Vec<Mint<M>> = (0..n).rev().map(|j| f[j] * fact[j]).collect();
     let mut b = Vec::with_capacity(n);
     let mut pw = Mint::<M>::one();
-    for i in 0..n {
-        b.push(pw * inv_fact[i]);
+    for &fi in inv_fact.iter().take(n) {
+        b.push(pw * fi);
         pw *= c;
     }
     let conv = mul(&a, &b);

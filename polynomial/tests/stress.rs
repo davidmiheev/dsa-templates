@@ -160,7 +160,7 @@ fn sparse_versions_match_dense() {
                 t.push((i, Mint::new(1 + rng.next_u64() % 998_244_352)));
             }
             for &i in &idx {
-                if first.map_or(true, |f| i > f) {
+                if first.is_none_or(|f| i > f) {
                     t.push((i, Mint::new(1 + rng.next_u64() % 998_244_352)));
                 }
             }
@@ -395,5 +395,39 @@ fn bivariate_inverse() {
         for (idx, &v) in prod.iter().enumerate() {
             assert_eq!(v, if idx == 0 { Mint::one() } else { Mint::zero() }, "case {case} {n}x{m} idx {idx}");
         }
+    }
+}
+
+#[test]
+fn composition_and_inverse() {
+    use polynomial::composition::*;
+    let mut rng = Rng::new(404);
+    for case in 0..200 * scale() {
+        let n = rng.range(1, 40) as usize;
+        let f = random(&mut rng, n);
+        let mut g = random(&mut rng, n);
+        g[0] = Mint::zero();
+        // naive composition
+        let mut want = vec![Mint::zero(); n];
+        let mut pw = vec![Mint::zero(); n];
+        pw[0] = Mint::one();
+        for k in 0..n {
+            for i in 0..n {
+                want[i] += f[k] * pw[i];
+            }
+            pw = fps::mul_trunc(&pw, &g, n);
+        }
+        assert_eq!(compose(&f, &g, n), want, "compose case {case} n={n}");
+        // compositional inverse: f(inverse) = x
+        let mut h = random(&mut rng, n.max(2));
+        h[0] = Mint::zero();
+        if h[1].val() == 0 {
+            h[1] = Mint::one();
+        }
+        let inv_h = compositional_inverse(&h, n.max(2));
+        let back = compose(&h, &inv_h, n.max(2));
+        let mut x = vec![Mint::zero(); n.max(2)];
+        x[1] = Mint::one();
+        assert_eq!(back, x, "inverse case {case} n={n}");
     }
 }

@@ -37,18 +37,6 @@ fn add_poly<const M: u32>(a: &[Mint<M>], b: &[Mint<M>]) -> Poly<M> {
     r
 }
 
-fn sub_poly<const M: u32>(a: &[Mint<M>], b: &[Mint<M>]) -> Poly<M> {
-    let mut r = vec![Mint::<M>::zero(); a.len().max(b.len())];
-    for (i, &x) in a.iter().enumerate() {
-        r[i] += x;
-    }
-    for (i, &x) in b.iter().enumerate() {
-        r[i] -= x;
-    }
-    trim(&mut r);
-    r
-}
-
 fn shifted<const M: u32>(a: &[Mint<M>], k: usize) -> Poly<M> {
     if a.len() <= k { Vec::new() } else { a[k..].to_vec() }
 }
@@ -89,7 +77,7 @@ pub fn half_gcd<const M: u32>(a: &[Mint<M>], b: &[Mint<M>]) -> Matrix<M> {
     trim(&mut b);
     let n = degree(&a);
     assert!(n > degree(&b), "half_gcd needs deg a > deg b");
-    let m = ((n + 1) / 2) as isize;
+    let m = (n + 1) / 2;
     if degree(&b) < m {
         return identity();
     }
