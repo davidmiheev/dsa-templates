@@ -82,6 +82,7 @@ members = [
     "min_plus",
     "multiplicative_convolution",
     "multivariate_convolution",
+    "gf2_64",
 ]
 
 [workspace.package]
