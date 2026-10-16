@@ -172,8 +172,8 @@ pub fn euclidean_mst(points: &[Point]) -> Vec<(usize, usize)> {
     let mut components = n;
     let mut tc = vec![0u32; n];
     while components > 1 {
-        for k in 0..n {
-            tc[k] = uf.find(kd.order[k]) as u32;
+        for (slot, &i) in tc.iter_mut().zip(&kd.order) {
+            *slot = uf.find(i) as u32;
         }
         kd.mark(0, &tc, &mut uniform);
         // the lightest edge leaving each component (ties arbitrary; cycles are skipped below)
