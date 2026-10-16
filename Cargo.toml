@@ -84,6 +84,7 @@ members = [
     "multivariate_convolution",
     "gf2_64",
     "polynomial",
+    "poly_mod_p",
 ]
 
 [workspace.package]

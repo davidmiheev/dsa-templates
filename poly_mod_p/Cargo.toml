@@ -1,0 +1,10 @@
+[package]
+name = "poly_mod_p"
+version = "0.1.0"
+edition = "2021"
+description = "Factorisation of polynomials over F_p for any prime p below 2^31 (square-free split, distinct degree, Cantor-Zassenhaus)."
+publish = false
+
+[lib]
+name = "poly_mod_p"
+path = "src/lib.rs"
