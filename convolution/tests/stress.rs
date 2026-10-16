@@ -1,6 +1,9 @@
 //! Stress test: NTT convolutions against the schoolbook product (mod p and exact u64).
 
-use convolution::{convolution, convolution_mod, convolution_u64, P1, P2, P3};
+use convolution::{
+    convolution, convolution_arbitrary_mod, convolution_large, convolution_mod, convolution_mod_2_64, convolution_three_primes,
+    convolution_u64, intt, ntt, P1, P2, P3, P4,
+};
 
 #[path = "../../stress_common.rs"]
 mod common;
@@ -95,8 +98,107 @@ fn large_sizes() {
 }
 
 #[test]
-#[should_panic(expected = "result too long")]
+#[should_panic(expected = "2-adic order")]
 fn too_long_for_p2_panics() {
     let a = vec![1u32; 1 << 25];
     convolution_mod::<P2>(&a, &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+}
+
+#[test]
+fn every_transform_size_against_schoolbook() {
+    let mut st = Stress::new("convolution/sizes");
+    let mut rng = Rng::new(77);
+    // all power-of-two transform sizes 2^0 .. 2^11 exercise radix-2 and radix-4 stages
+    for h in 0..=11 {
+        let n = 1usize << h;
+        for _ in 0..3 {
+            let a: Vec<u32> = (0..n).map(|_| rng.below(P1 as usize) as u32).collect();
+            let mut f = a.clone();
+            ntt::<P1>(&mut f);
+            intt::<P1>(&mut f);
+            assert_eq!(f, a, "ntt/intt roundtrip at 2^{h}");
+            // transform of a delta is constant, of a shifted delta a character
+            let mut delta = vec![0u32; n];
+            delta[0] = 1;
+            ntt::<P1>(&mut delta);
+            assert!(delta.iter().all(|&x| x == 1));
+        }
+        st.case();
+    }
+    for case in 0..300 * scale() {
+        let (la, lb) = (rng.range(25, 700) as usize, rng.range(25, 700) as usize);
+        for (name, m) in [("p4", P4), ("p1", P1)] {
+            let a: Vec<u32> = (0..la).map(|_| rng.below(m as usize) as u32).collect();
+            let b: Vec<u32> = (0..lb).map(|_| rng.below(m as usize) as u32).collect();
+            let got = if m == P4 { convolution_mod::<P4>(&a, &b) } else { convolution(&a, &b) };
+            assert_eq!(got, schoolbook_mod(&a, &b, m), "{name} case {case} la={la} lb={lb}");
+        }
+        st.ops(1);
+    }
+    st.done();
+}
+
+#[test]
+fn arbitrary_modulus_and_large() {
+    let mut st = Stress::new("convolution/arbitrary");
+    let mut rng = Rng::new(5);
+    for case in 0..200 * scale() {
+        let m = *[1_000_000_007u32, 2, 998_244_353, 1_999_999_973, 65_537].get(case % 5).unwrap();
+        let (la, lb) = (rng.range(1, 300) as usize, rng.range(1, 300) as usize);
+        let a: Vec<u32> = (0..la).map(|_| rng.below(m as usize) as u32).collect();
+        let b: Vec<u32> = (0..lb).map(|_| rng.below(m as usize) as u32).collect();
+        assert_eq!(convolution_arbitrary_mod(&a, &b, m), schoolbook_mod(&a, &b, m), "case {case} m={m}");
+        let a2: Vec<u32> = a.iter().map(|&x| x % P1).collect();
+        let b2: Vec<u32> = b.iter().map(|&x| x % P1).collect();
+        // the three large primes used by `convolution_large`, on a short input
+        assert_eq!(convolution_three_primes::<P2, P3, P4>(&a2, &b2, P1), convolution(&a2, &b2), "case {case}");
+        st.case();
+    }
+    st.done();
+}
+
+/// Result longer than 2^23: all-ones inputs give a known triangle. About 25 s, so it only runs
+/// with `STRESS_SCALE >= 2`.
+#[test]
+fn convolution_beyond_two_to_the_23() {
+    if scale() < 2 {
+        return;
+    }
+    let mut st = Stress::new("convolution/2^24");
+    let n = (1usize << 23) + 5;
+    let ones = vec![1u32; n];
+    let c = convolution_large(&ones, &ones);
+    assert_eq!(c.len(), 2 * n - 1);
+    for &k in &[0usize, 1, 100, n - 1, n, n + 77, 2 * n - 2] {
+        let want = (if k < n { k + 1 } else { 2 * n - 1 - k }) as u32 % P1;
+        assert_eq!(c[k], want, "k={k}");
+    }
+    st.done();
+}
+
+#[test]
+fn mod_2_64_matches_wrapping_schoolbook() {
+    let mut st = Stress::new("convolution/2^64");
+    let mut rng = Rng::new(9);
+    for case in 0..200 * scale() {
+        let (la, lb) = (rng.range(1, 200) as usize, rng.range(1, 200) as usize);
+        let a: Vec<u64> = (0..la).map(|_| rng.next_u64()).collect();
+        let b: Vec<u64> = (0..lb).map(|_| rng.next_u64()).collect();
+        let mut want = vec![0u64; la + lb - 1];
+        for i in 0..la {
+            for j in 0..lb {
+                want[i + j] = want[i + j].wrapping_add(a[i].wrapping_mul(b[j]));
+            }
+        }
+        assert_eq!(convolution_mod_2_64(&a, &b), want, "case {case}");
+        st.case();
+    }
+    // all-ones limbs maximise the per-coefficient sums
+    let a = vec![u64::MAX; 100_000];
+    let c = convolution_mod_2_64(&a, &a);
+    for &k in &[0usize, 5, 99_999, 150_000, 199_998] {
+        let terms = (if k < 100_000 { k + 1 } else { 199_999 - k }) as u64;
+        assert_eq!(c[k], terms, "k={k}"); // (-1) * (-1) = 1 per term
+    }
+    st.done();
 }
