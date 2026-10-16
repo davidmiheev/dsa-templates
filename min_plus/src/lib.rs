@@ -135,7 +135,7 @@ pub fn min_plus_concave_arbitrary<W: Copy + Ord + Add<Output = W>>(a: &[W], b: &
     let c = std::cell::RefCell::new(vec![None::<W>; n + m - 1]);
     let relax = |k: usize, v: W| {
         let mut c = c.borrow_mut();
-        if c[k].map_or(true, |x| v < x) {
+        if c[k].is_none_or(|x| v < x) {
             c[k] = Some(v);
         }
     };

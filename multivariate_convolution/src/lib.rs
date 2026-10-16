@@ -65,13 +65,12 @@ pub fn multivariate_convolution(shape: &[usize], f: &[u32], g: &[u32]) -> Vec<u3
     };
     let (fa, fb) = (split(f), split(g));
     let mut out = vec![vec![0u32; size]; k];
-    for l in 0..k {
-        for r in 0..k {
+    for (l, x) in fa.iter().enumerate() {
+        for (r, y) in fb.iter().enumerate() {
             let lr = if l + r >= k { l + r - k } else { l + r };
-            for t in 0..size {
-                let prod = fa[l][t] as u64 * fb[r][t] as u64 % MOD;
-                let s = out[lr][t] as u64 + prod;
-                out[lr][t] = (if s >= MOD { s - MOD } else { s }) as u32;
+            for ((o, &u), &v) in out[lr].iter_mut().zip(x).zip(y) {
+                let s = *o as u64 + u as u64 * v as u64 % MOD;
+                *o = (if s >= MOD { s - MOD } else { s }) as u32;
             }
         }
     }

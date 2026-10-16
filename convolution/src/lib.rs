@@ -137,7 +137,7 @@ pub fn convolution_arbitrary_mod(a: &[u32], b: &[u32], m: u32) -> Vec<u32> {
     if a.is_empty() || b.is_empty() {
         return Vec::new();
     }
-    assert!(m >= 2 && m < 1 << 31, "modulus {m} out of range");
+    assert!((2..1 << 31).contains(&m), "modulus {m} out of range");
     if a.len().min(b.len()) <= 24 {
         let mut c = vec![0u64; a.len() + b.len() - 1];
         for (i, &x) in a.iter().enumerate() {

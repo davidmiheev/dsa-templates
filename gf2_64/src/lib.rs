@@ -24,8 +24,6 @@
 
 use std::sync::OnceLock;
 
-const REDUCTION: u64 = 0b11011; // x^4 + x^3 + x + 1
-
 /// Reduce the 128-bit carry-less product `hi * x^64 + lo`.
 #[inline(always)]
 fn reduce(lo: u64, hi: u64) -> u64 {

@@ -10,9 +10,9 @@ fn trial_factor(mut n: u64) -> Vec<(u64, u32)> {
     let mut out = Vec::new();
     let mut p = 2;
     while p * p <= n {
-        if n % p == 0 {
+        if n.is_multiple_of(p) {
             let mut e = 0;
-            while n % p == 0 {
+            while n.is_multiple_of(p) {
                 n /= p;
                 e += 1;
             }

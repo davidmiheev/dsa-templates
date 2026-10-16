@@ -67,7 +67,7 @@ pub fn is_prime(n: u64) -> bool {
     }
     const BASES: [u64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
     for &p in &BASES {
-        if n % p == 0 {
+        if n.is_multiple_of(p) {
             return n == p;
         }
     }
@@ -91,7 +91,7 @@ pub fn is_prime(n: u64) -> bool {
 
 /// A nontrivial divisor of the composite `n` (Brent's cycle detection with batched gcds).
 fn rho(n: u64) -> u64 {
-    if n % 2 == 0 {
+    if n.is_multiple_of(2) {
         return 2;
     }
     let mut c = 1u64;
@@ -152,7 +152,7 @@ pub fn factorize(mut n: u64) -> Vec<(u64, u32)> {
     assert!(n >= 1, "cannot factorise 0");
     let mut primes = Vec::new();
     for p in [2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47] {
-        while n % p == 0 {
+        while n.is_multiple_of(p) {
             primes.push(p);
             n /= p;
         }
