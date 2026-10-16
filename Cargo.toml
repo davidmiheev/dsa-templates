@@ -83,6 +83,7 @@ members = [
     "multiplicative_convolution",
     "multivariate_convolution",
     "gf2_64",
+    "polynomial",
 ]
 
 [workspace.package]
