@@ -150,7 +150,7 @@ fn arbitrary_modulus_and_large() {
         assert_eq!(convolution_arbitrary_mod(&a, &b, m), schoolbook_mod(&a, &b, m), "case {case} m={m}");
         let a2: Vec<u32> = a.iter().map(|&x| x % P1).collect();
         let b2: Vec<u32> = b.iter().map(|&x| x % P1).collect();
-        // the three large primes used by `convolution_large`, on a short input
+        // the three-prime route on the large primes
         assert_eq!(convolution_three_primes::<P2, P3, P4>(&a2, &b2, P1), convolution(&a2, &b2), "case {case}");
         st.case();
     }
@@ -172,6 +172,18 @@ fn convolution_beyond_two_to_the_23() {
     for &k in &[0usize, 1, 100, n - 1, n, n + 77, 2 * n - 2] {
         let want = (if k < n { k + 1 } else { 2 * n - 1 - k }) as u32 % P1;
         assert_eq!(c[k], want, "k={k}");
+    }
+    // random data, coefficients spot-checked against the definition
+    let mut rng = Rng::new(3);
+    let a: Vec<u32> = (0..(1usize << 23) + 5).map(|_| rng.below(P1 as usize) as u32).collect();
+    let b: Vec<u32> = (0..(1usize << 22) + 9).map(|_| rng.below(P1 as usize) as u32).collect();
+    let c = convolution_large(&a, &b);
+    assert_eq!(c.len(), a.len() + b.len() - 1);
+    for &k in &[0usize, 17, (1 << 22) - 1, 1 << 22, (1 << 23) + 4, (1 << 23) + (1 << 22), c.len() - 1] {
+        let lo = k.saturating_sub(b.len() - 1);
+        let hi = k.min(a.len() - 1);
+        let want = (lo..=hi).fold(0u64, |acc, i| (acc + a[i] as u64 * b[k - i] as u64) % P1 as u64);
+        assert_eq!(c[k] as u64, want, "k={k}");
     }
     st.done();
 }
