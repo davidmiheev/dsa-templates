@@ -1,0 +1,10 @@
+[package]
+name = "bit_matrix"
+version = "0.1.0"
+edition = "2021"
+description = "Matrices over F_2 packed into 64-bit words: product (four Russians), rank, determinant, inverse, linear systems, intersection of vector spaces."
+publish = false
+
+[lib]
+name = "bit_matrix"
+path = "src/lib.rs"
