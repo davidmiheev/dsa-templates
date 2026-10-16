@@ -1,0 +1,10 @@
+[package]
+name = "stern_brocot"
+version = "0.1.0"
+edition = "2021"
+description = "Stern-Brocot tree: run-length paths, lowest common ancestor, ancestors, subtree ranges and best rational approximations."
+publish = false
+
+[lib]
+name = "stern_brocot"
+path = "src/lib.rs"
