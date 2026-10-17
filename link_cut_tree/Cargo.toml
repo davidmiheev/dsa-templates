@@ -1,0 +1,13 @@
+[package]
+name = "link_cut_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Link-cut tree: dynamic forest with path folds over a (possibly non-commutative) monoid."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "link_cut_tree"
+path = "src/lib.rs"

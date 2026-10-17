@@ -1,0 +1,13 @@
+[package]
+name = "tree_path_affine_sum"
+version = "0.1.0"
+edition = "2021"
+description = "Dynamic sum over all vertices of affine functions composed along tree paths, for any root, with point updates."
+publish = false
+
+[dependencies]
+heavy_light_decomposition = { path = "../heavy_light_decomposition" }
+
+[lib]
+name = "tree_path_affine_sum"
+path = "src/lib.rs"
