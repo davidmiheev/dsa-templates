@@ -1,0 +1,10 @@
+[package]
+name = "wavelet_matrix"
+version = "0.1.0"
+edition = "2021"
+description = "Wavelet matrix: k-th smallest, rank and frequency queries on ranges of a static array."
+publish = false
+
+[lib]
+name = "wavelet_matrix"
+path = "src/lib.rs"

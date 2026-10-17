@@ -1,0 +1,10 @@
+[package]
+name = "li_chao_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Li Chao tree: minimum of lines and segments at integer points over a huge domain."
+publish = false
+
+[lib]
+name = "li_chao_tree"
+path = "src/lib.rs"

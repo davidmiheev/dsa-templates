@@ -1,0 +1,13 @@
+[package]
+name = "queue_aggregation"
+version = "0.1.0"
+edition = "2021"
+description = "Queue and deque that maintain the fold of a monoid over all elements in amortized O(1)."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "queue_aggregation"
+path = "src/lib.rs"

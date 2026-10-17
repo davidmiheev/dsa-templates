@@ -1,0 +1,10 @@
+[package]
+name = "algebra"
+version = "0.1.0"
+edition = "2021"
+description = "Small algebraic traits (Monoid, MapMonoid, Group) shared by the data-structure crates."
+publish = false
+
+[lib]
+name = "algebra"
+path = "src/lib.rs"

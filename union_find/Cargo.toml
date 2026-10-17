@@ -5,6 +5,9 @@ edition = "2021"
 description = "Generic Union-Find (disjoint set) data structure with weighted union and per-component character."
 publish = false
 
+[dependencies]
+algebra = { path = "../algebra" }
+
 [lib]
 name = "union_find"
 path = "src/lib.rs"

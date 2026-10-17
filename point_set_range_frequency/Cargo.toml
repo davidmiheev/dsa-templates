@@ -1,0 +1,10 @@
+[package]
+name = "point_set_range_frequency"
+version = "0.1.0"
+edition = "2021"
+description = "Offline point-assign / count-occurrences-in-range structure (one Fenwick tree per value)."
+publish = false
+
+[lib]
+name = "point_set_range_frequency"
+path = "src/lib.rs"
