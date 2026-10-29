@@ -20,6 +20,8 @@ problem's own checker on every generated test.
 
 Compared against ac on 1 problems: geometric mean of ours/ac = **0.56**; 1 within 10% or faster, 0 slower than that.
 
+> **Note on the timings.** They were measured with the portable radix-4 transforms. The `convolution` crate now runs its NTT on AVX2 when the CPU has it (identical results): the NTT-bound solutions of this table are 1.4-2.6x faster, see [`../ntt_engines.md`](../ntt_engines.md) for the profile, the engines compared and per-problem before / after numbers.
+
 New code driven by this category (all in `set_power_series`): `subset_convolution` rewritten on a
 `[mask][rank]` layout, `subset_exp`, `subset_log`, `subset_compose` (composition with a univariate
 polynomial) and `subset_power_projection` (its transpose). The ranked representation turns the

@@ -3,12 +3,12 @@
 //! are convolutions. The twiddle factors are generated on the fly from `O(log n)` constants.
 
 #[inline(always)]
-fn mul<const P: u32>(a: u32, b: u32) -> u32 {
+pub(crate) fn mul<const P: u32>(a: u32, b: u32) -> u32 {
     (a as u64 * b as u64 % P as u64) as u32
 }
 
 /// `-P^{-1} mod 2^32`, for Montgomery reduction.
-const fn neg_inv(p: u32) -> u32 {
+pub(crate) const fn neg_inv(p: u32) -> u32 {
     let mut x = p; // correct to 3 bits, each step doubles the number of correct bits
     let mut i = 0;
     while i < 5 {
@@ -20,7 +20,7 @@ const fn neg_inv(p: u32) -> u32 {
 
 /// Montgomery product `a * b / 2^32 mod P` of residues `< P`, result in `[0, P)`.
 #[inline(always)]
-fn mmul<const P: u32>(a: u32, b: u32) -> u32 {
+pub(crate) fn mmul<const P: u32>(a: u32, b: u32) -> u32 {
     let t = a as u64 * b as u64;
     let m = (t as u32).wrapping_mul(neg_inv(P));
     let u = ((t + m as u64 * P as u64) >> 32) as u32;
@@ -32,12 +32,12 @@ fn mmul<const P: u32>(a: u32, b: u32) -> u32 {
 }
 
 /// `x * 2^32 mod P`: the Montgomery form of `x`.
-fn to_mont<const P: u32>(x: u32) -> u32 {
+pub(crate) fn to_mont<const P: u32>(x: u32) -> u32 {
     (((x as u64) << 32) % P as u64) as u32
 }
 
 #[inline(always)]
-fn add<const P: u32>(a: u32, b: u32) -> u32 {
+pub(crate) fn add<const P: u32>(a: u32, b: u32) -> u32 {
     let s = a + b;
     if s >= P {
         s - P
@@ -47,7 +47,7 @@ fn add<const P: u32>(a: u32, b: u32) -> u32 {
 }
 
 #[inline(always)]
-fn sub<const P: u32>(a: u32, b: u32) -> u32 {
+pub(crate) fn sub<const P: u32>(a: u32, b: u32) -> u32 {
     if a >= b {
         a - b
     } else {
@@ -88,16 +88,16 @@ pub(crate) const fn rank2<const P: u32>() -> u32 {
 }
 
 /// Constants of one prime; the rate tables and `imag` are in Montgomery form.
-struct Info {
-    root: [u32; 32],
-    iroot: [u32; 32],
-    rate2: [u32; 32],
-    irate2: [u32; 32],
-    rate3: [u32; 32],
-    irate3: [u32; 32],
+pub(crate) struct Info {
+    pub root: [u32; 32],
+    pub iroot: [u32; 32],
+    pub rate2: [u32; 32],
+    pub irate2: [u32; 32],
+    pub rate3: [u32; 32],
+    pub irate3: [u32; 32],
 }
 
-fn info<const P: u32>() -> Info {
+pub(crate) fn info<const P: u32>() -> Info {
     let r2 = rank2::<P>() as usize;
     let m = P as u64;
     let mut root = [0u32; 32];
@@ -127,7 +127,22 @@ fn info<const P: u32>() -> Info {
 }
 
 /// In-place forward transform of a power-of-two length slice (output in bit-reversed-like order).
+/// Runs the AVX2 version when the CPU has it (the AVX-512 one with the `avx512` feature); the
+/// output is identical.
 pub fn ntt<const P: u32>(a: &mut [u32]) {
+    #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
+    if a.len() >= 1 << 12 && crate::simd512::available() {
+        return crate::simd512::ntt_avx512::<P>(a);
+    }
+    #[cfg(target_arch = "x86_64")]
+    if a.len() >= 32 && crate::simd::available() {
+        return crate::simd::ntt_avx2::<P>(a);
+    }
+    ntt_scalar::<P>(a)
+}
+
+/// The portable radix-4 forward transform (see [`ntt`]).
+pub fn ntt_scalar<const P: u32>(a: &mut [u32]) {
     let n = a.len();
     assert!(n.is_power_of_two(), "length {n} is not a power of two");
     let h = n.trailing_zeros() as usize;
@@ -191,6 +206,19 @@ pub fn ntt<const P: u32>(a: &mut [u32]) {
 /// In-place inverse transform (input as produced by [`ntt`]); the result is multiplied by `n`
 /// compared to the true inverse, so divide by `n` (see [`intt`]).
 pub fn intt_unscaled<const P: u32>(a: &mut [u32]) {
+    #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
+    if a.len() >= 1 << 12 && crate::simd512::available() {
+        return crate::simd512::intt_unscaled_avx512::<P>(a);
+    }
+    #[cfg(target_arch = "x86_64")]
+    if a.len() >= 32 && crate::simd::available() {
+        return crate::simd::intt_unscaled_avx2::<P>(a);
+    }
+    intt_unscaled_scalar::<P>(a)
+}
+
+/// The portable radix-4 inverse transform (see [`intt_unscaled`]).
+pub fn intt_unscaled_scalar<const P: u32>(a: &mut [u32]) {
     let n = a.len();
     assert!(n.is_power_of_two(), "length {n} is not a power of two");
     let h = n.trailing_zeros() as usize;
@@ -254,5 +282,22 @@ pub fn intt<const P: u32>(a: &mut [u32]) {
     let n_inv = to_mont::<P>(pow_mod(a.len() as u64, P as u64 - 2, P as u64) as u32);
     for x in a.iter_mut() {
         *x = mmul::<P>(*x, n_inv);
+    }
+}
+
+/// `a[i] = a[i] * b[i] / n` for the transforms of two length-`n` polynomials: the pointwise
+/// product with the `1 / n` of the inverse transform folded in, so that
+/// [`intt_unscaled`] of the result is the cyclic convolution.
+pub fn pointwise_scaled<const P: u32>(a: &mut [u32], b: &[u32]) {
+    assert_eq!(a.len(), b.len(), "spectra of different lengths");
+    let n = a.len() as u64;
+    let n_inv = pow_mod(n, P as u64 - 2, P as u64) as u32;
+    #[cfg(target_arch = "x86_64")]
+    if a.len() >= 32 && crate::simd::available() {
+        // two Montgomery products: a * b / 2^32, then times (n_inv * 2^64) / 2^32
+        return crate::simd::pointwise_avx2::<P>(a, b, to_mont::<P>(to_mont::<P>(n_inv)));
+    }
+    for (x, &y) in a.iter_mut().zip(b) {
+        *x = mul::<P>(mul::<P>(*x, y), n_inv);
     }
 }

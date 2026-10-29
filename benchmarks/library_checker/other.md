@@ -18,6 +18,8 @@ quoted in the comments; for `two_sat` the ac column is shown too.
 
 ac-library-rs only has `two_sat` (where it overflows the stack on one test) and nothing for the rest. Against the reference C++ solutions: within 10% or faster on 6 of 7 problems; geometric mean of ours / reference = **0.64**.
 
+> **Note on the timings.** They were measured with the portable radix-4 transforms. The `convolution` crate now runs its NTT on AVX2 when the CPU has it (identical results): the NTT-bound solutions of this table are 1.4-2.6x faster, see [`../ntt_engines.md`](../ntt_engines.md) for the profile, the engines compared and per-problem before / after numbers.
+
 New code: `linear_recurrence::{kth_term, consecutive_terms}` (spectral Bostan–Mori; the terms at a
 huge index via `x^k mod g`), `combinatorics::{sum_exponential_times_polynomial,
 sum_exponential_times_polynomial_limit}`, and the new crates `two_sat` and `subsequence`
