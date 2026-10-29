@@ -131,7 +131,7 @@ pub(crate) fn info<const P: u32>() -> Info {
 /// output is identical.
 pub fn ntt<const P: u32>(a: &mut [u32]) {
     #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
-    if a.len() >= 64 && crate::simd512::available() {
+    if a.len() >= 1 << 12 && crate::simd512::available() {
         return crate::simd512::ntt_avx512::<P>(a);
     }
     #[cfg(target_arch = "x86_64")]
@@ -207,7 +207,7 @@ pub fn ntt_scalar<const P: u32>(a: &mut [u32]) {
 /// compared to the true inverse, so divide by `n` (see [`intt`]).
 pub fn intt_unscaled<const P: u32>(a: &mut [u32]) {
     #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
-    if a.len() >= 64 && crate::simd512::available() {
+    if a.len() >= 1 << 12 && crate::simd512::available() {
         return crate::simd512::intt_unscaled_avx512::<P>(a);
     }
     #[cfg(target_arch = "x86_64")]

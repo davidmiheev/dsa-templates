@@ -8,10 +8,18 @@
 use crate::ntt::{info, mmul, neg_inv, rank2, to_mont};
 use std::arch::x86_64::*;
 
+static ENABLED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+/// Switch the dispatch to the AVX-512 transforms on or off (for benchmarks; the AVX2 and portable
+/// code give identical results).
+pub fn set_enabled(on: bool) {
+    ENABLED.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
 /// Whether the AVX-512 transforms can run on this CPU (and were not switched off with
-/// [`crate::simd::set_enabled`]).
+/// [`set_enabled`] or [`crate::simd::set_enabled`]).
 pub fn available() -> bool {
-    crate::simd::enabled() && std::is_x86_feature_detected!("avx512f")
+    ENABLED.load(std::sync::atomic::Ordering::Relaxed) && crate::simd::enabled() && std::is_x86_feature_detected!("avx512f")
 }
 
 struct K {
@@ -99,59 +107,87 @@ unsafe fn vsub(a: __m512i, b: __m512i, k: &K) -> __m512i {
     _mm512_min_epu32(d, _mm512_add_epi32(d, k.p))
 }
 
-fn idx(f: impl Fn(usize) -> usize) -> [i32; 16] {
-    let mut r = [0i32; 16];
-    for (k, x) in r.iter_mut().enumerate() {
-        *x = f(k) as i32;
-    }
-    r
+/// The shuffle tables of the five in-register layers (spans 16 handled separately), built at
+/// compile time: for span `s` in `[8, 4, 2, 1]`, `l` / `h` gather the pair-low / pair-high
+/// elements of the 32-element chunk `(x0, x1)`, `o0` / `o1` rebuild `x0` / `x1` from the new
+/// pair-low (`aa`) and pair-high (`bb`) vectors, `tw[t]` selects the twiddle of each lane.
+struct PermData {
+    l: [[i32; 16]; 4],
+    h: [[i32; 16]; 4],
+    o0: [[i32; 16]; 4],
+    o1: [[i32; 16]; 4],
+    tw: [[i32; 16]; 3],
 }
 
-/// The shuffle tables of the five in-register layers.
+const fn perm_data() -> PermData {
+    let mut d = PermData { l: [[0; 16]; 4], h: [[0; 16]; 4], o0: [[0; 16]; 4], o1: [[0; 16]; 4], tw: [[0; 16]; 3] };
+    let spans = [8usize, 4, 2, 1];
+    let mut t = 0;
+    while t < 4 {
+        let s = spans[t];
+        let (mut nl, mut nh) = (0, 0);
+        let mut j = 0;
+        while j < 32 {
+            if j & s == 0 {
+                d.l[t][nl] = j as i32;
+                nl += 1;
+            } else {
+                d.h[t][nh] = j as i32;
+                nh += 1;
+            }
+            j += 1;
+        }
+        // element e of the chunk comes from aa[rank among the pair-low] or bb[rank among the pair-high] + 16
+        let (mut rl, mut rh) = (0, 0);
+        let mut e = 0;
+        while e < 32 {
+            let src = if e & s == 0 {
+                rl += 1;
+                rl - 1
+            } else {
+                rh += 1;
+                16 + rh - 1
+            };
+            if e < 16 {
+                d.o0[t][e] = src as i32;
+            } else {
+                d.o1[t][e - 16] = src as i32;
+            }
+            e += 1;
+        }
+        t += 1;
+    }
+    let mut k = 0;
+    while k < 16 {
+        d.tw[0][k] = (k / 8) as i32;
+        d.tw[1][k] = (k / 4) as i32;
+        d.tw[2][k] = (k / 2) as i32;
+        k += 1;
+    }
+    d
+}
+
+static PERM: PermData = perm_data();
+
 struct Perm {
-    // gather L (low half of every pair) and H (high half) of span 8 / 4 / 2 / 1 from (x0, x1)
     l: [__m512i; 4],
     h: [__m512i; 4],
-    // twiddle selectors for spans 8 / 4 / 2 (span 1 loads the table directly)
     tw: [__m512i; 3],
-    // rebuild x0, x1 from (aa, bb) for spans 8 / 4 / 2 / 1
     o0: [__m512i; 4],
     o1: [__m512i; 4],
 }
 
+#[inline]
 #[target_feature(enable = "avx512f")]
 unsafe fn perms() -> Perm {
-    let v = |a: [i32; 16]| _mm512_loadu_si512(a.as_ptr() as *const _);
-    // lane j of the 32 elements of (x0, x1) is j for j < 16 and 16 + (j - 16) otherwise, so a
-    // "source lane" below 16 reads the first operand and 16.. the second
-    let mut l = [v([0; 16]); 4];
-    let mut h = [v([0; 16]); 4];
-    let mut o0 = [v([0; 16]); 4];
-    let mut o1 = [v([0; 16]); 4];
-    for (t, s) in [8usize, 4, 2, 1].into_iter().enumerate() {
-        // elements of the pair-low / pair-high positions in the 32-element chunk
-        let lows: Vec<usize> = (0..32).filter(|j| j & s == 0).collect();
-        let highs: Vec<usize> = (0..32).filter(|j| j & s != 0).collect();
-        l[t] = v(idx(|k| lows[k]));
-        h[t] = v(idx(|k| highs[k]));
-        // after the butterfly aa holds the new pair-low elements (in `lows` order) and bb the
-        // pair-high ones; element e of the chunk is aa[pos in lows] or bb[pos in highs] + 16
-        let src = |e: usize| -> usize {
-            if e & s == 0 {
-                lows.iter().position(|&x| x == e).unwrap()
-            } else {
-                16 + highs.iter().position(|&x| x == e).unwrap()
-            }
-        };
-        o0[t] = v(idx(src));
-        o1[t] = v(idx(|k| src(16 + k)));
+    let v = |a: &[i32; 16]| _mm512_loadu_si512(a.as_ptr() as *const _);
+    Perm {
+        l: [v(&PERM.l[0]), v(&PERM.l[1]), v(&PERM.l[2]), v(&PERM.l[3])],
+        h: [v(&PERM.h[0]), v(&PERM.h[1]), v(&PERM.h[2]), v(&PERM.h[3])],
+        tw: [v(&PERM.tw[0]), v(&PERM.tw[1]), v(&PERM.tw[2])],
+        o0: [v(&PERM.o0[0]), v(&PERM.o0[1]), v(&PERM.o0[2]), v(&PERM.o0[3])],
+        o1: [v(&PERM.o1[0]), v(&PERM.o1[1]), v(&PERM.o1[2]), v(&PERM.o1[3])],
     }
-    let tw = [
-        v(idx(|k| k / 8)),  // span 8: two blocks of 16 -> [r0 x8 | r1 x8]
-        v(idx(|k| k / 4)),  // span 4: four blocks
-        v(idx(|k| k / 2)),  // span 2: eight blocks
-    ];
-    Perm { l, h, tw, o0, o1 }
 }
 
 /// `x0, x1 <- the 5 layers` helper: gather, butterfly with the twiddle vector, scatter.
