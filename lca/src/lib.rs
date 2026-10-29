@@ -46,8 +46,16 @@ impl RootedTree {
     /// # Panics
     /// Panics if the edges do not form a tree on `0..n`, `root >= n` or `n >= 2^32`.
     pub fn from_edges(n: usize, edges: &[(usize, usize)], root: usize) -> Self {
-        assert!(root < n && n < u32::MAX as usize, "root out of range or too many vertices");
-        assert_eq!(edges.len() + 1, n, "a tree on {n} vertices has {} edges", n.wrapping_sub(1));
+        assert!(
+            root < n && n < u32::MAX as usize,
+            "root out of range or too many vertices"
+        );
+        assert_eq!(
+            edges.len() + 1,
+            n,
+            "a tree on {n} vertices has {} edges",
+            n.wrapping_sub(1)
+        );
         let mut start = vec![0u32; n + 2];
         for &(u, v) in edges {
             assert!(u < n && v < n, "edge endpoint out of range");
@@ -85,7 +93,11 @@ impl RootedTree {
             }
             i += 1;
         }
-        assert_eq!(old_of_new.len(), n, "the edges do not form a tree (not connected)");
+        assert_eq!(
+            old_of_new.len(),
+            n,
+            "the edges do not form a tree (not connected)"
+        );
         Self::finish(n, new_of_old, old_of_new, parent, depth)
     }
 
@@ -95,8 +107,14 @@ impl RootedTree {
     /// Panics if the array does not describe a tree rooted at `root`.
     pub fn from_parents(parent: &[usize], root: usize) -> Self {
         let n = parent.len();
-        assert!(root < n && n < u32::MAX as usize, "root out of range or too many vertices");
-        let edges: Vec<(usize, usize)> = (0..n).filter(|&v| v != root).map(|v| (v, parent[v])).collect();
+        assert!(
+            root < n && n < u32::MAX as usize,
+            "root out of range or too many vertices"
+        );
+        let edges: Vec<(usize, usize)> = (0..n)
+            .filter(|&v| v != root)
+            .map(|v| (v, parent[v]))
+            .collect();
         Self::from_edges(n, &edges, root)
     }
 
@@ -107,24 +125,51 @@ impl RootedTree {
     /// Panics if some `parent[v] >= v`.
     pub fn from_increasing_parents(parent: &[usize]) -> Self {
         let n = parent.len();
-        assert!(n >= 1 && n < u32::MAX as usize, "need 1 <= n < 2^32 vertices");
+        assert!(
+            n >= 1 && n < u32::MAX as usize,
+            "need 1 <= n < 2^32 vertices"
+        );
         let mut p = vec![0u32; n];
         let mut depth = vec![0u32; n];
         for v in 1..n {
-            assert!(parent[v] < v, "parent[{v}] = {} is not smaller than {v}", parent[v]);
+            assert!(
+                parent[v] < v,
+                "parent[{v}] = {} is not smaller than {v}",
+                parent[v]
+            );
             p[v] = parent[v] as u32;
             depth[v] = depth[parent[v]] + 1;
         }
         let id: Vec<u32> = (0..n as u32).collect();
-        RootedTree { n, new_of_old: id.clone(), old_of_new: id, parent: p, depth: depth.clone(), depth_old: depth }
+        RootedTree {
+            n,
+            new_of_old: id.clone(),
+            old_of_new: id,
+            parent: p,
+            depth: depth.clone(),
+            depth_old: depth,
+        }
     }
 
-    fn finish(n: usize, new_of_old: Vec<u32>, old_of_new: Vec<u32>, parent: Vec<u32>, depth: Vec<u32>) -> Self {
+    fn finish(
+        n: usize,
+        new_of_old: Vec<u32>,
+        old_of_new: Vec<u32>,
+        parent: Vec<u32>,
+        depth: Vec<u32>,
+    ) -> Self {
         let mut depth_old = vec![0u32; n];
         for (new, &old) in old_of_new.iter().enumerate() {
             depth_old[old as usize] = depth[new];
         }
-        RootedTree { n, new_of_old, old_of_new, parent, depth, depth_old }
+        RootedTree {
+            n,
+            new_of_old,
+            old_of_new,
+            parent,
+            depth,
+            depth_old,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -248,7 +293,17 @@ impl Lca {
                 hi[i] = prev[i].min(prev[i + half]);
             }
         }
-        Lca { tin_of_old, size_old, depth_old: t.depth_old.clone(), old_by_tin, key, prefix, suffix, table, blocks }
+        Lca {
+            tin_of_old,
+            size_old,
+            depth_old: t.depth_old.clone(),
+            old_by_tin,
+            key,
+            prefix,
+            suffix,
+            table,
+            blocks,
+        }
     }
 
     /// The lowest common ancestor of `u` and `v`.
@@ -264,13 +319,19 @@ impl Lca {
         l += 1; // the parents of the vertices at preorder (tin[u], tin[v]]
         let (bl, br) = (l >> BLOCK_SHIFT, r >> BLOCK_SHIFT);
         let m = if bl == br {
-            self.key[l..=r].iter().copied().min().expect("non-empty range")
+            self.key[l..=r]
+                .iter()
+                .copied()
+                .min()
+                .expect("non-empty range")
         } else {
             let mut m = self.suffix[l].min(self.prefix[r]);
             if bl + 1 < br {
                 let (a, b) = (bl + 1, br - 1);
                 let k = (usize::BITS - 1 - (b - a + 1).leading_zeros()) as usize;
-                m = m.min(self.table[k * self.blocks + a]).min(self.table[k * self.blocks + b + 1 - (1 << k)]);
+                m = m
+                    .min(self.table[k * self.blocks + a])
+                    .min(self.table[k * self.blocks + b + 1 - (1 << k)]);
             }
             m
         };
@@ -368,7 +429,14 @@ impl LevelAncestor {
                 x = long[x] as usize;
             }
         }
-        LevelAncestor { n, up, slot, ladder, new_of_old: t.new_of_old.clone(), depth_old: t.depth_old.clone() }
+        LevelAncestor {
+            n,
+            up,
+            slot,
+            ladder,
+            new_of_old: t.new_of_old.clone(),
+            depth_old: t.depth_old.clone(),
+        }
     }
 
     /// The `k`-th ancestor of `v` (`k = 0` is `v`).
@@ -377,7 +445,10 @@ impl LevelAncestor {
     /// Panics if `k` exceeds the depth of `v`.
     #[inline]
     pub fn kth_ancestor(&self, v: usize, k: usize) -> usize {
-        assert!(k <= self.depth_old[v] as usize, "vertex {v} has no ancestor {k} levels up");
+        assert!(
+            k <= self.depth_old[v] as usize,
+            "vertex {v} has no ancestor {k} levels up"
+        );
         if k == 0 {
             return v;
         }
@@ -394,7 +465,11 @@ impl LevelAncestor {
         let l = lca.lca(u, v);
         let up = lca.depth(u) - lca.depth(l);
         let down = lca.depth(v) - lca.depth(l);
-        assert!(k <= up + down, "the path has only {} vertices", up + down + 1);
+        assert!(
+            k <= up + down,
+            "the path has only {} vertices",
+            up + down + 1
+        );
         if k <= up {
             self.kth_ancestor(u, k)
         } else {
@@ -417,7 +492,14 @@ pub struct BinaryLifting {
 impl BinaryLifting {
     pub fn new(t: &RootedTree) -> Self {
         let (levels, up) = t.jump_table();
-        BinaryLifting { n: t.n, levels, up, depth: t.depth.clone(), new_of_old: t.new_of_old.clone(), old_of_new: t.old_of_new.clone() }
+        BinaryLifting {
+            n: t.n,
+            levels,
+            up,
+            depth: t.depth.clone(),
+            new_of_old: t.new_of_old.clone(),
+            old_of_new: t.old_of_new.clone(),
+        }
     }
 
     fn kth(&self, mut v: usize, mut k: usize) -> usize {
@@ -438,7 +520,10 @@ impl BinaryLifting {
     /// Panics if `k` exceeds the depth of `v`.
     pub fn kth_ancestor(&self, v: usize, k: usize) -> usize {
         let new = self.new_of_old[v] as usize;
-        assert!(k <= self.depth[new] as usize, "vertex {v} has no ancestor {k} levels up");
+        assert!(
+            k <= self.depth[new] as usize,
+            "vertex {v} has no ancestor {k} levels up"
+        );
         self.old_of_new[self.kth(new, k)] as usize
     }
 
@@ -451,7 +536,10 @@ impl BinaryLifting {
         u = self.kth(u, (self.depth[u] - self.depth[v]) as usize);
         if u != v {
             for k in (0..self.levels).rev() {
-                let (a, b) = (self.up[k * self.n + u] as usize, self.up[k * self.n + v] as usize);
+                let (a, b) = (
+                    self.up[k * self.n + u] as usize,
+                    self.up[k * self.n + v] as usize,
+                );
                 if a != b {
                     u = a;
                     v = b;

@@ -16,12 +16,12 @@ fn random_tree(rng: &mut Rng, n: usize, shape: usize) -> Vec<(usize, usize)> {
     (1..n)
         .map(|v| {
             let p = match shape {
-                0 => rng.below(v),                     // random recursive tree
-                1 => v - 1,                            // path
-                2 => 0,                                // star
-                3 => (v - 1) / 2,                      // binary heap shape
+                0 => rng.below(v),                       // random recursive tree
+                1 => v - 1,                              // path
+                2 => 0,                                  // star
+                3 => (v - 1) / 2,                        // binary heap shape
                 4 => v.saturating_sub(1 + rng.below(3)), // almost a path
-                _ => v - 1 - rng.below(v.min(8)),      // bushy near the end
+                _ => v - 1 - rng.below(v.min(8)),        // bushy near the end
             };
             (perm[v], perm[p])
         })
@@ -84,12 +84,24 @@ fn lca_and_level_ancestors() {
         for v in 0..n {
             assert_eq!(t.depth(v), depth[v]);
             assert_eq!(t2.depth(v), depth[v]);
-            assert_eq!(t.parent(v), if v == root { RootedTree::NONE } else { parent[v] });
+            assert_eq!(
+                t.parent(v),
+                if v == root {
+                    RootedTree::NONE
+                } else {
+                    parent[v]
+                }
+            );
         }
         // preorder: subtree ranges are contiguous and contain exactly the descendants
         for v in 0..n {
             let (lo, hi) = l.subtree(v);
-            assert_eq!(hi - lo, (0..n).filter(|&u| naive_lca(&parent, &depth, u, v) == v).count());
+            assert_eq!(
+                hi - lo,
+                (0..n)
+                    .filter(|&u| naive_lca(&parent, &depth, u, v) == v)
+                    .count()
+            );
             for u in 0..n {
                 let desc = naive_lca(&parent, &depth, u, v) == v;
                 assert_eq!(l.is_ancestor(v, u), desc);
