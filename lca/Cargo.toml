@@ -1,0 +1,10 @@
+[package]
+name = "lca"
+version = "0.1.0"
+edition = "2021"
+description = "Lowest common ancestor in O(1) (block sparse table), O(1) level ancestor (jump pointers + ladders), binary lifting, and BFS / preorder numbering of rooted trees."
+publish = false
+
+[lib]
+name = "lca"
+path = "src/lib.rs"

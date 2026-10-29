@@ -4,6 +4,7 @@ members = [
     "two_sat",
     "subsequence",
     "bigint",
+    "lca",
     "geometry",
     "strings",
     "combinatorics",
