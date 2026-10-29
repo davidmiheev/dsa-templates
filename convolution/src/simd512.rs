@@ -149,9 +149,9 @@ const fn perm_data() -> PermData {
                 16 + rh - 1
             };
             if e < 16 {
-                d.o0[t][e] = src as i32;
+                d.o0[t][e] = src;
             } else {
-                d.o1[t][e - 16] = src as i32;
+                d.o1[t][e - 16] = src;
             }
             e += 1;
         }
