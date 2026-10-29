@@ -8,7 +8,7 @@
 
 use crate::ntt::{info, mmul, neg_inv, rank2, to_mont};
 use std::arch::x86_64::*;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 static ENABLED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
 
@@ -35,9 +35,8 @@ struct Tables {
     c: Consts,
 }
 
-thread_local! {
-    static CACHE: RefCell<Vec<(u32, Tables)>> = const { RefCell::new(Vec::new()) };
-}
+/// Rotation tables per prime, shared by all threads (built on first use, grown on demand).
+static CACHE: Mutex<Vec<(u32, Arc<Tables>)>> = Mutex::new(Vec::new());
 
 fn build_tables<const P: u32>(len: usize) -> Tables {
     let t = info::<P>();
@@ -54,27 +53,28 @@ fn build_tables<const P: u32>(len: usize) -> Tables {
     Tables { r, ir, info: info::<P>(), c: consts::<P>() }
 }
 
+fn tables<const P: u32>(len: usize) -> Arc<Tables> {
+    let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((_, t)) = cache.iter().find(|(p, _)| *p == P) {
+        if t.r.len() >= len {
+            return t.clone();
+        }
+    }
+    let t = Arc::new(build_tables::<P>(len.next_power_of_two()));
+    cache.retain(|(p, _)| *p != P);
+    cache.push((P, t.clone()));
+    t
+}
+
 /// The rotation tables `(R, IR)` for other engines.
 pub(crate) fn with_tables_pub<const P: u32, T>(len: usize, f: impl FnOnce(&[u32], &[u32]) -> T) -> T {
-    with_tables::<P, _>(len, |t| f(&t.r, &t.ir))
+    let t = tables::<P>(len);
+    f(&t.r, &t.ir)
 }
 
 /// Runs `f` with tables holding at least `len` rotations for the prime `P`.
 fn with_tables<const P: u32, T>(len: usize, f: impl FnOnce(&Tables) -> T) -> T {
-    CACHE.with(|c| {
-        let mut c = c.borrow_mut();
-        let idx = match c.iter().position(|(p, _)| *p == P) {
-            Some(i) => i,
-            None => {
-                c.push((P, build_tables::<P>(0)));
-                c.len() - 1
-            }
-        };
-        if c[idx].1.r.len() < len {
-            c[idx].1 = build_tables::<P>(len.next_power_of_two());
-        }
-        f(&c[idx].1)
-    })
+    f(&tables::<P>(len))
 }
 
 struct K {
