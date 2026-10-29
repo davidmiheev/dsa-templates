@@ -24,6 +24,8 @@ to build on, and notes the run time of the reference C++ solution on the same te
 
 Compared against ac on 4 problems: geometric mean of ours/ac = **0.65**; 4 within 10% or faster, 0 slower than that.
 
+> **Note on the timings.** They were measured with the portable radix-4 transforms. The `convolution` crate now runs its NTT on AVX2 when the CPU has it (identical results): the NTT-bound solutions of this table are 1.4-2.6x faster, see [`../ntt_engines.md`](../ntt_engines.md) for the profile, the engines compared and per-problem before / after numbers.
+
 New crate `combinatorics`: `BlockFactorials` (huge factorials), `BinomialMod` / `BinomialPrime` /
 `QBinomialPrime`, Stirling numbers of both kinds (rows, fixed `k`, and the small-prime / huge-`n`
 queries), Bell and partition numbers, subset-sum counts, derangements modulo any integer,
