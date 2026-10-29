@@ -25,6 +25,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 
 /// Integer modulo `M`.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct StaticModInt<const M: u32>(u32);
 
 /// Arithmetic modulo 998 244 353.

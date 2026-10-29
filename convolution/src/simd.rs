@@ -18,9 +18,13 @@ pub fn set_enabled(on: bool) {
     ENABLED.store(on, std::sync::atomic::Ordering::Relaxed);
 }
 
+pub(crate) fn enabled() -> bool {
+    ENABLED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// Whether the AVX2 transforms can run on this CPU (and were not switched off).
 pub fn available() -> bool {
-    ENABLED.load(std::sync::atomic::Ordering::Relaxed) && std::is_x86_feature_detected!("avx2")
+    enabled() && std::is_x86_feature_detected!("avx2")
 }
 
 /// Rotations `R[s]` of the radix-2 layers (and their inverses), Montgomery form.
@@ -48,6 +52,11 @@ fn build_tables<const P: u32>(len: usize) -> Tables {
         y = mmul::<P>(y, t.irate2[z.min(31)]);
     }
     Tables { r, ir, info: info::<P>(), c: consts::<P>() }
+}
+
+/// The rotation tables `(R, IR)` for other engines.
+pub(crate) fn with_tables_pub<const P: u32, T>(len: usize, f: impl FnOnce(&[u32], &[u32]) -> T) -> T {
+    with_tables::<P, _>(len, |t| f(&t.r, &t.ir))
 }
 
 /// Runs `f` with tables holding at least `len` rotations for the prime `P`.

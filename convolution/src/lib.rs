@@ -33,6 +33,8 @@
 mod ntt;
 #[cfg(target_arch = "x86_64")]
 pub mod simd;
+#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
+pub mod simd512;
 
 pub use ntt::{intt, intt_unscaled, intt_unscaled_scalar, ntt, ntt_scalar, pointwise_scaled, primitive_root};
 use ntt::pow_mod;
@@ -71,10 +73,13 @@ pub fn convolution_mod<const M: u32>(a: &[u32], b: &[u32]) -> Vec<u32> {
         return naive::<M>(a, b);
     }
     let n = len.next_power_of_two();
-    let mut fa = vec![0u32; n];
-    let mut fb = vec![0u32; n];
-    fa[..a.len()].copy_from_slice(a);
-    fb[..b.len()].copy_from_slice(b);
+    let padded = |x: &[u32]| {
+        let mut v = Vec::with_capacity(n);
+        v.extend_from_slice(x);
+        v.resize(n, 0);
+        v
+    };
+    let (mut fa, mut fb) = (padded(a), padded(b));
     ntt::ntt::<M>(&mut fa);
     ntt::ntt::<M>(&mut fb);
     ntt::pointwise_scaled::<M>(&mut fa, &fb);

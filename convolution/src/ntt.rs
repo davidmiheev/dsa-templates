@@ -127,8 +127,13 @@ pub(crate) fn info<const P: u32>() -> Info {
 }
 
 /// In-place forward transform of a power-of-two length slice (output in bit-reversed-like order).
-/// Runs the AVX2 version when the CPU has it (identical output).
+/// Runs the AVX2 version when the CPU has it (the AVX-512 one with the `avx512` feature); the
+/// output is identical.
 pub fn ntt<const P: u32>(a: &mut [u32]) {
+    #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
+    if a.len() >= 64 && crate::simd512::available() {
+        return crate::simd512::ntt_avx512::<P>(a);
+    }
     #[cfg(target_arch = "x86_64")]
     if a.len() >= 32 && crate::simd::available() {
         return crate::simd::ntt_avx2::<P>(a);
@@ -201,6 +206,10 @@ pub fn ntt_scalar<const P: u32>(a: &mut [u32]) {
 /// In-place inverse transform (input as produced by [`ntt`]); the result is multiplied by `n`
 /// compared to the true inverse, so divide by `n` (see [`intt`]).
 pub fn intt_unscaled<const P: u32>(a: &mut [u32]) {
+    #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
+    if a.len() >= 64 && crate::simd512::available() {
+        return crate::simd512::intt_unscaled_avx512::<P>(a);
+    }
     #[cfg(target_arch = "x86_64")]
     if a.len() >= 32 && crate::simd::available() {
         return crate::simd::intt_unscaled_avx2::<P>(a);
