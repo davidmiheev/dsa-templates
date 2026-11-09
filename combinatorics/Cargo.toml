@@ -1,0 +1,17 @@
+[package]
+name = "combinatorics"
+version = "0.1.0"
+edition = "2021"
+description = "Enumerative combinatorics modulo primes and composite moduli: binomials, q-binomials, huge factorials, Stirling / Bell / partition numbers, subset-sum counts, increasing sequences between two sequences."
+publish = false
+
+[dependencies]
+modint = { path = "../modint" }
+polynomial = { path = "../polynomial" }
+convolution = { path = "../convolution" }
+number_theory = { path = "../number_theory" }
+hash_map = { path = "../hash_map" }
+
+[lib]
+name = "combinatorics"
+path = "src/lib.rs"
