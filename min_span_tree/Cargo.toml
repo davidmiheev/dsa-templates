@@ -1,0 +1,13 @@
+[package]
+name = "min_span_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Kruskal minimum spanning forest on top of union_find."
+publish = false
+
+[dependencies]
+union_find = { path = "../union_find" }
+
+[lib]
+name = "min_span_tree"
+path = "src/lib.rs"

@@ -34,10 +34,15 @@ pub struct State {
     /// Length of the longest substring represented by this state.
     pub len: usize,
     /// Suffix link: points to the state representing the longest proper
-    /// suffix of this state's substrings.
-    pub link: Option<usize>,
+    /// suffix of this state's substrings; [`State::NONE`] for the initial state.
+    pub link: usize,
     /// Transitions keyed by character.
     pub next: std::collections::BTreeMap<char, usize>,
+}
+
+impl State {
+    /// The suffix link of the initial state.
+    pub const NONE: usize = usize::MAX;
 }
 
 /// Suffix Automaton over a sequence of `char`s.
@@ -55,7 +60,7 @@ impl SuffixAutomaton {
         SuffixAutomaton {
             states: vec![State {
                 len: 0,
-                link: None,
+                link: State::NONE,
                 next: std::collections::BTreeMap::new(),
             }],
             last: 0,
@@ -67,22 +72,22 @@ impl SuffixAutomaton {
         let cur = self.states.len();
         self.states.push(State {
             len: self.states[self.last].len + 1,
-            link: None,
+            link: State::NONE,
             next: std::collections::BTreeMap::new(),
         });
 
         let mut p = self.last;
         while p != usize::MAX && !self.states[p].next.contains_key(&ch) {
             self.states[p].next.insert(ch, cur);
-            p = self.states[p].link.unwrap_or(usize::MAX);
+            p = self.states[p].link;
         }
 
         if p == usize::MAX {
-            self.states[cur].link = Some(0);
+            self.states[cur].link = 0;
         } else {
             let q = self.states[p].next[&ch];
             if self.states[p].len + 1 == self.states[q].len {
-                self.states[cur].link = Some(q);
+                self.states[cur].link = q;
             } else {
                 // Clone state q into a new state `clone`.
                 let clone = self.states.len();
@@ -93,10 +98,10 @@ impl SuffixAutomaton {
                 });
                 while p != usize::MAX && self.states[p].next.get(&ch) == Some(&q) {
                     self.states[p].next.insert(ch, clone);
-                    p = self.states[p].link.unwrap_or(usize::MAX);
+                    p = self.states[p].link;
                 }
-                self.states[q].link = Some(clone);
-                self.states[cur].link = Some(clone);
+                self.states[q].link = clone;
+                self.states[cur].link = clone;
             }
         }
 
@@ -132,7 +137,7 @@ impl SuffixAutomaton {
             if i == 0 {
                 continue;
             }
-            let link_len = s.link.map(|l| self.states[l].len).unwrap_or(0);
+            let link_len = self.states[s.link].len;
             total += (s.len - link_len) as u64;
         }
         total

@@ -36,7 +36,7 @@ mod rollback;
 
 pub use potential::PotentialUnionFind;
 pub use range_parallel::RangeParallelUnionFind;
-pub use rollback::RollbackUnionFind;
+pub use rollback::{RollbackSumUnionFind, RollbackUnionFind};
 
 /// Union-Find with per-component character values of type `C`.
 pub struct UnionFind<C, F> {

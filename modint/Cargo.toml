@@ -1,0 +1,10 @@
+[package]
+name = "modint"
+version = "0.1.0"
+edition = "2021"
+description = "Compile-time-modulus modular integer StaticModInt<M> with the usual operators."
+publish = false
+
+[lib]
+name = "modint"
+path = "src/lib.rs"

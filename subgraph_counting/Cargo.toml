@@ -1,0 +1,13 @@
+[package]
+name = "subgraph_counting"
+version = "0.1.0"
+edition = "2021"
+description = "Triangle and clique enumeration and per-edge 4-cycle counting in O(m sqrt m) via degree ordering."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "subgraph_counting"
+path = "src/lib.rs"

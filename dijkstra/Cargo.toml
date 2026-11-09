@@ -2,8 +2,11 @@
 name = "dijkstra"
 version = "0.1.0"
 edition = "2021"
-description = "Dijkstra's shortest-path algorithm on a weighted graph"
+description = "Dijkstra shortest paths on CSR graphs with generic non-negative weights"
 publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
 
 [lib]
 name = "dijkstra"

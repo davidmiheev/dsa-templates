@@ -1,0 +1,14 @@
+[package]
+name = "complement_graph"
+version = "0.1.0"
+edition = "2021"
+description = "Connected components of the complement of a graph in O(n + m)."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+fast_set = { path = "../fast_set" }
+
+[lib]
+name = "complement_graph"
+path = "src/lib.rs"

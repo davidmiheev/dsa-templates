@@ -78,7 +78,12 @@ fn traversals_match_iterative_references() {
             slot[i] = Some(v);
         }
         for i in 1..=size {
-            assert_eq!(tree.get(i), slot[i].as_ref(), "get({i}) case {case}");
+            assert_eq!(tree.is_set(i), slot[i].is_some(), "is_set({i}) case {case}");
+            if let Some(v) = &slot[i] {
+                assert_eq!(tree.get(i), v, "get({i}) case {case}");
+            } else {
+                assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| *tree.get(i))).is_err(), "get of an unset node panics");
+            }
         }
         for n in [size, rng.range(0, size as i64) as usize, 0] {
             assert_eq!(tree.inorder(n), inorder(&slot, n), "inorder n={n} case {case}");
@@ -94,8 +99,8 @@ fn traversals_match_iterative_references() {
 #[test]
 fn index_zero_and_out_of_range_panic() {
     let mut t = BinaryTree::new(4);
-    assert!(std::panic::catch_unwind(|| BinaryTree::<u8>::new(4).get(0).copied()).is_err());
-    assert!(std::panic::catch_unwind(|| BinaryTree::<u8>::new(4).get(5).copied()).is_err());
+    assert!(std::panic::catch_unwind(|| *BinaryTree::<u8>::new(4).get(0)).is_err());
+    assert!(std::panic::catch_unwind(|| *BinaryTree::<u8>::new(4).get(5)).is_err());
     assert!(std::panic::catch_unwind(move || t.set(0, 1u8)).is_err());
     let mut t = BinaryTree::new(4);
     assert!(std::panic::catch_unwind(move || t.set(5, 1u8)).is_err());

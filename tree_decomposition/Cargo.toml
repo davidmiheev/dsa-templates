@@ -1,0 +1,13 @@
+[package]
+name = "tree_decomposition"
+version = "0.1.0"
+edition = "2021"
+description = "Tree decompositions of width at most 2 (series-parallel reduction)."
+publish = false
+
+[dependencies]
+hash_map = { path = "../hash_map" }
+
+[lib]
+name = "tree_decomposition"
+path = "src/lib.rs"

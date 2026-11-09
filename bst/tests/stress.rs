@@ -16,7 +16,8 @@ fn matches_btreeset() {
         let mut bst = Bst::new();
         let mut set = BTreeSet::new();
         st.case();
-        assert_eq!((bst.min(), bst.max(), bst.inorder()), (None, None, vec![]), "empty tree");
+        assert!(bst.is_empty() && bst.inorder().is_empty(), "empty tree");
+        assert!(std::panic::catch_unwind(|| Bst::new().min()).is_err() && std::panic::catch_unwind(|| Bst::new().max()).is_err(), "min/max of an empty tree panic");
         for step in 0..120 {
             let key = rng.range(-span, span);
             if rng.chance(2, 3) {
@@ -24,8 +25,11 @@ fn matches_btreeset() {
             } else {
                 assert_eq!(bst.contains(key), set.contains(&key), "contains({key}) case {case} step {step}");
             }
-            assert_eq!(bst.min(), set.iter().next().copied(), "min case {case} step {step}");
-            assert_eq!(bst.max(), set.iter().next_back().copied(), "max case {case} step {step}");
+            assert_eq!(bst.is_empty(), set.is_empty());
+            if let (Some(&lo), Some(&hi)) = (set.iter().next(), set.iter().next_back()) {
+                assert_eq!(bst.min(), lo, "min case {case} step {step}");
+                assert_eq!(bst.max(), hi, "max case {case} step {step}");
+            }
             st.ops(1);
         }
         assert_eq!(bst.inorder(), set.iter().copied().collect::<Vec<_>>(), "inorder case {case}");

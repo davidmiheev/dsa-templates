@@ -2,7 +2,7 @@
 //! invariants, and a suffix-array/LCP count of distinct substrings at scale.
 
 use std::collections::HashSet;
-use suffix_automaton::SuffixAutomaton;
+use suffix_automaton::{State, SuffixAutomaton};
 
 #[path = "../../stress_common.rs"]
 mod common;
@@ -17,9 +17,10 @@ fn text(rng: &mut Rng, len: usize, letters: usize) -> String {
 fn check_structure(sam: &SuffixAutomaton, n: usize, ctx: &str) {
     assert_eq!(sam.states[sam.last].len, n, "last state has the full length {ctx}");
     assert!(sam.states.len() <= 2 * n.max(2), "at most 2n states {ctx}");
-    assert_eq!(sam.states[0].link, None);
+    assert_eq!(sam.states[0].link, State::NONE);
     for (v, s) in sam.states.iter().enumerate().skip(1) {
-        let l = s.link.expect("every non-initial state has a suffix link");
+        let l = s.link;
+        assert_ne!(l, State::NONE, "every non-initial state has a suffix link");
         assert!(sam.states[l].len < s.len, "link lengths strictly decrease at {v} {ctx}");
         for (_, &to) in &s.next {
             assert!(sam.states[to].len > s.len || sam.states[to].len >= 1, "sane transition at {v} {ctx}");

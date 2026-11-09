@@ -1,0 +1,14 @@
+[package]
+name = "graph_center"
+version = "0.1.0"
+edition = "2021"
+description = "Absolute centre of a weighted graph and minimum diameter spanning tree."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+dijkstra = { path = "../dijkstra" }
+
+[lib]
+name = "graph_center"
+path = "src/lib.rs"

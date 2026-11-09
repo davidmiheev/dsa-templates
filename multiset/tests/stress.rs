@@ -11,8 +11,13 @@ const V: usize = 12;
 fn check(ms: &MultiSet<i32>, counts: &[usize; V], ctx: &str) {
     assert_eq!(ms.len(), counts.iter().sum::<usize>(), "len {ctx}");
     assert_eq!(ms.is_empty(), counts.iter().all(|&c| c == 0), "is_empty {ctx}");
-    assert_eq!(ms.first(), (0..V).find(|&v| counts[v] > 0).map(|v| v as i32), "first {ctx}");
-    assert_eq!(ms.last(), (0..V).rev().find(|&v| counts[v] > 0).map(|v| v as i32), "last {ctx}");
+    if let Some(first) = (0..V).find(|&v| counts[v] > 0) {
+        assert_eq!(ms.first(), first as i32, "first {ctx}");
+        assert_eq!(ms.last(), (0..V).rev().find(|&v| counts[v] > 0).unwrap() as i32, "last {ctx}");
+    } else {
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ms.first())).is_err(), "first of an empty multiset panics {ctx}");
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ms.last())).is_err(), "last of an empty multiset panics {ctx}");
+    }
     for v in 0..V {
         assert_eq!(ms.count(&(v as i32)), counts[v], "count({v}) {ctx}");
         assert_eq!(ms.contains(&(v as i32)), counts[v] > 0, "contains({v}) {ctx}");

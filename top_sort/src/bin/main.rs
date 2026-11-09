@@ -1,4 +1,4 @@
-use top_sort::topological_sort;
+use top_sort::{is_acyclic, topological_sort};
 
 /// Run the topological sort example.
 pub fn run() {
@@ -14,20 +14,14 @@ pub fn run() {
         vec![3, 2],    // 5
     ];
 
-    match topological_sort(&graph) {
-        Some(order) => {
-            let s: Vec<String> = order.iter().map(|v| v.to_string()).collect();
-            println!("{}", s.join(" "));
-        }
-        None => println!("cycle"),
-    }
+    assert!(is_acyclic(&graph));
+    let order = topological_sort(&graph);
+    let s: Vec<String> = order.iter().map(|v| v.to_string()).collect();
+    println!("{}", s.join(" "));
 
-    // Cyclic: 0 -> 1 -> 0
+    // Cyclic: 0 -> 1 -> 0 (`topological_sort` would panic, so test it first)
     let cyclic: Vec<Vec<usize>> = vec![vec![1], vec![0], vec![]];
-    println!("{}", match topological_sort(&cyclic) {
-        Some(o) => format!("{:?}", o),
-        None => "cycle".to_string(),
-    });
+    println!("{}", if is_acyclic(&cyclic) { format!("{:?}", topological_sort(&cyclic)) } else { "cycle".to_string() });
 }
 
 fn main() {
@@ -42,14 +36,22 @@ mod tests {
     fn valid_dag_is_sorted() {
         // 0 <- 1 <- 2 <- 3 (i.e., 3 -> 2 -> 1 -> 0)
         let graph: Vec<Vec<usize>> = vec![vec![], vec![0], vec![1], vec![2]];
-        let order = topological_sort(&graph).unwrap();
+        let order = topological_sort(&graph);
         assert_eq!(order, vec![3, 2, 1, 0]);
     }
 
     #[test]
-    fn cyclic_returns_none() {
+    #[should_panic(expected = "cycle")]
+    fn cyclic_panics() {
         let graph: Vec<Vec<usize>> = vec![vec![1], vec![0]];
-        assert!(topological_sort(&graph).is_none());
+        topological_sort(&graph);
+    }
+
+    #[test]
+    fn is_acyclic_detects_cycles() {
+        assert!(is_acyclic(&[vec![], vec![0]]));
+        assert!(!is_acyclic(&[vec![1], vec![0]]));
+        assert!(!is_acyclic(&[vec![0]]));
     }
 
     #[test]

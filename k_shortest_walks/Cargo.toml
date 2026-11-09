@@ -1,0 +1,14 @@
+[package]
+name = "k_shortest_walks"
+version = "0.1.0"
+edition = "2021"
+description = "K shortest s-t walks in a directed graph (Eppstein's algorithm with persistent leftist heaps)."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+dijkstra = { path = "../dijkstra" }
+
+[lib]
+name = "k_shortest_walks"
+path = "src/lib.rs"

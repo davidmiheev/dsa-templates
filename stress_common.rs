@@ -66,7 +66,7 @@ impl Rng {
             let p = match shape {
                 1 => v - 1,
                 2 => 0,
-                3 => if v % 2 == 1 { v.saturating_sub(2).max(0) } else { v - 1 },
+                3 => if v % 2 == 1 { v.saturating_sub(2) } else { v - 1 },
                 _ => self.below(v),
             };
             adj[p].push(v);

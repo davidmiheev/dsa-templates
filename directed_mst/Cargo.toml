@@ -1,0 +1,13 @@
+[package]
+name = "directed_mst"
+version = "0.1.0"
+edition = "2021"
+description = "Minimum cost arborescence (Chu-Liu/Edmonds with skew heaps and a rollback union-find)."
+publish = false
+
+[dependencies]
+union_find = { path = "../union_find" }
+
+[lib]
+name = "directed_mst"
+path = "src/lib.rs"

@@ -1,0 +1,14 @@
+[package]
+name = "offline_connectivity"
+version = "0.1.0"
+edition = "2021"
+description = "Offline dynamic graph connectivity: divide and conquer over time with a rollback union-find."
+publish = false
+
+[dependencies]
+union_find = { path = "../union_find" }
+hash_map = { path = "../hash_map" }
+
+[lib]
+name = "offline_connectivity"
+path = "src/lib.rs"

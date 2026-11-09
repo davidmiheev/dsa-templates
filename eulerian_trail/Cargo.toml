@@ -1,0 +1,13 @@
+[package]
+name = "eulerian_trail"
+version = "0.1.0"
+edition = "2021"
+description = "Eulerian trails / circuits of directed and undirected multigraphs (Hierholzer)."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "eulerian_trail"
+path = "src/lib.rs"

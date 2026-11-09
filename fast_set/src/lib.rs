@@ -38,7 +38,7 @@ impl FastSet {
         let mut levels = Vec::new();
         let mut size = n;
         loop {
-            size = (size + 63) / 64;
+            size = size.div_ceil(64);
             levels.push(vec![0u64; size.max(1)]);
             if size <= 1 {
                 break;

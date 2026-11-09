@@ -1,26 +1,20 @@
+use csr_graph::Csr;
 use dijkstra::dijkstra;
 
 /// Run the Dijkstra example.
 pub fn run() {
     println!("dijkstra");
-
-    // Directed weighted graph:
-    //   0 -> 1 (4), 0 -> 2 (1)
-    //   1 -> 3 (1)
-    //   2 -> 1 (2), 2 -> 3 (5)
-    //   3 -> (none)
-    let graph: Vec<Vec<(usize, u64)>> = vec![
-        vec![(1, 4), (2, 1)],
-        vec![(3, 1)],
-        vec![(1, 2), (3, 5)],
-        vec![],
-    ];
-
-    let dist = dijkstra(&graph, 0);
-    println!("{}", dist.get(&0).unwrap()); // 0
-    println!("{}", dist.get(&1).unwrap()); // 3
-    println!("{}", dist.get(&2).unwrap()); // 1
-    println!("{}", dist.get(&3).unwrap()); // 4
+    // 0 -> 1 (4), 0 -> 2 (1), 2 -> 1 (2), 1 -> 3 (5)
+    let edges = [(0, 1), (0, 2), (2, 1), (1, 3)];
+    let g = Csr::directed(5, &edges);
+    let sp = dijkstra(&g, &[4u64, 1, 2, 5], 0);
+    for v in 0..5 {
+        if sp.reachable(v) {
+            println!("dist[{}] = {} via {:?}", v, sp.dist[v], sp.path_vertices(v));
+        } else {
+            println!("dist[{}] = unreachable", v);
+        }
+    }
 }
 
 fn main() {
@@ -32,25 +26,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn shortest_paths_classic_example() {
-        let graph: Vec<Vec<(usize, u64)>> = vec![
-            vec![(1, 4), (2, 1)],
-            vec![(3, 1)],
-            vec![(1, 2), (3, 5)],
-            vec![],
-        ];
-        let dist = dijkstra(&graph, 0);
-        assert_eq!(dist[&0], 0);
-        assert_eq!(dist[&1], 3); // 0 -> 2 -> 1 (cheaper than 0 -> 1)
-        assert_eq!(dist[&2], 1);
-        assert_eq!(dist[&3], 4); // 0 -> 2 -> 1 -> 3
+    fn small_graph() {
+        let g = Csr::directed(3, &[(0, 1), (1, 2), (0, 2)]);
+        let sp = dijkstra(&g, &[1u32, 1, 5], 0);
+        assert_eq!(sp.dist, vec![0, 1, 2]);
+        assert_eq!(sp.path_edges(2), vec![0, 1]);
     }
 
     #[test]
-    fn unreachable_vertex_absent() {
-        let graph: Vec<Vec<(usize, u64)>> = vec![vec![(1, 1)], vec![], vec![]];
-        let dist = dijkstra(&graph, 0);
-        assert!(!dist.contains_key(&2));
+    #[should_panic(expected = "not reachable")]
+    fn unreachable_path_panics() {
+        let g = Csr::directed(2, &[]);
+        dijkstra(&g, &[] as &[u32], 0).path_edges(1);
     }
 
     #[test]

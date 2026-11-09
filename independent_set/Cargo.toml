@@ -1,0 +1,10 @@
+[package]
+name = "independent_set"
+version = "0.1.0"
+edition = "2021"
+description = "Maximum independent set / maximum clique of graphs with up to 64 vertices by bitmask branching."
+publish = false
+
+[lib]
+name = "independent_set"
+path = "src/lib.rs"

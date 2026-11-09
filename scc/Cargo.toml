@@ -1,0 +1,13 @@
+[package]
+name = "scc"
+version = "0.1.0"
+edition = "2021"
+description = "Strongly connected components (iterative Tarjan), numbered in topological order."
+publish = false
+
+[dependencies]
+csr_graph = { path = "../csr_graph" }
+
+[lib]
+name = "scc"
+path = "src/lib.rs"
