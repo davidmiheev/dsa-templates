@@ -1,0 +1,13 @@
+[package]
+name = "euler_tour_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Euler tour tree: dynamic forest with whole-tree folds and lazy whole-tree updates, over a treap."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "euler_tour_tree"
+path = "src/lib.rs"

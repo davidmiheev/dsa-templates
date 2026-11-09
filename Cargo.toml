@@ -39,6 +39,12 @@ members = [
     "kd_tree",
     "range_sort_sequence",
     "seaweed",
+    "tree_algos",
+    "link_cut_tree",
+    "convolution",
+    "euler_tour_tree",
+    "tree_path_affine_sum",
+    "permutation_tree",
 ]
 
 [workspace.package]

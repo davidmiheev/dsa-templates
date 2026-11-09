@@ -1,0 +1,14 @@
+[package]
+name = "permutation_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Permutation tree (common interval decomposition tree) in O(n log n)."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+lazy_segment_tree = { path = "../lazy_segment_tree" }
+
+[lib]
+name = "permutation_tree"
+path = "src/lib.rs"

@@ -4,40 +4,16 @@ use heavy_light_decomposition::Hld;
 pub fn run() {
     println!("heavy_light_decomposition");
 
-    // Tree:
-    //      0
-    //      |
-    //      1
-    //     / \
-    //    2   3
-    //    |   |
-    //    4   5
-    let adj = vec![
-        vec![1],
-        vec![0, 2, 3],
-        vec![1, 4],
-        vec![1, 5],
-        vec![2],
-        vec![3],
-    ];
-    let hld = Hld::new(&adj, 0);
+    // 0 - 1 - {2 - 4, 3 - 5}
+    let hld = Hld::from_edges(6, &[(0, 1), (1, 2), (1, 3), (2, 4), (3, 5)], 0);
 
-    // Print parent / depth / chain head / pos for every vertex.
-    for v in 0..adj.len() {
-        let p = match hld.parent[v] {
-            Some(p) if p == usize::MAX => "root".to_string(),
-            Some(p) => p.to_string(),
-            None => "-".to_string(),
-        };
-        println!(
-            "v={} parent={} depth={} head={} pos={}",
-            v, p, hld.depth[v], hld.head[v], hld.pos[v]
-        );
+    for v in 0..hld.len() {
+        let p = if hld.parent[v] == Hld::NONE { "root".to_string() } else { hld.parent[v].to_string() };
+        println!("v={} parent={} depth={} head={} pos={}", v, p, hld.depth[v], hld.head[v], hld.pos[v]);
     }
 
-    // Path from 4 to 5 should be covered by 3 segments.
-    let segs = hld.path_segments(4, 5);
-    println!("segments(4,5) = {:?}", segs);
+    println!("segments(4,5) = {:?}", hld.path_segments(4, 5));
+    println!("lca(4,5) = {}, dist(4,5) = {}", hld.lca(4, 5), hld.dist(4, 5));
 }
 
 fn main() {
@@ -48,52 +24,27 @@ fn main() {
 mod tests {
     use super::*;
 
-    fn sample_tree() -> Vec<Vec<usize>> {
-        vec![
-            vec![1],
-            vec![0, 2, 3],
-            vec![1, 4],
-            vec![1, 5],
-            vec![2],
-            vec![3],
-        ]
+    #[test]
+    fn small_tree_basics() {
+        let hld = Hld::from_edges(6, &[(0, 1), (1, 2), (1, 3), (2, 4), (3, 5)], 0);
+        assert_eq!(hld.parent[0], Hld::NONE);
+        assert_eq!(hld.parent[4], 2);
+        assert_eq!(hld.lca(4, 5), 1);
+        assert_eq!(hld.dist(4, 5), 4);
+        assert_eq!(hld.jump(4, 2), 1);
+        assert_eq!(hld.path_vertex(4, 5, 3), 3);
     }
 
     #[test]
-    fn parents_and_depths() {
-        let hld = Hld::new(&sample_tree(), 0);
-        assert_eq!(hld.parent[0], None);
-        assert_eq!(hld.parent[1], Some(0));
-        assert_eq!(hld.parent[2], Some(1));
-        assert_eq!(hld.parent[3], Some(1));
-        assert_eq!(hld.depth[0], 0);
-        assert_eq!(hld.depth[1], 1);
-        assert_eq!(hld.depth[2], 2);
-        assert_eq!(hld.depth[3], 2);
-        assert_eq!(hld.depth[4], 3);
-        assert_eq!(hld.depth[5], 3);
+    #[should_panic(expected = "ancestor")]
+    fn jump_too_far_panics() {
+        Hld::from_edges(2, &[(0, 1)], 0).jump(1, 2);
     }
 
     #[test]
-    fn positions_are_permutation() {
-        let tree = sample_tree();
-        let n = tree.len();
-        let hld = Hld::new(&tree, 0);
-        let mut seen = vec![false; n];
-        for v in 0..n {
-            seen[hld.pos[v]] = true;
-        }
-        assert!(seen.iter().all(|&x| x));
-    }
-
-    #[test]
-    fn path_segments_cover_full_path() {
-        let tree = sample_tree();
-        let hld = Hld::new(&tree, 0);
-        let segs = hld.path_segments(4, 5);
-        // 4 -> 1 -> 0 -> 1 -> 3 -> 5; split into O(log n) segments.
-        assert!(!segs.is_empty());
-        assert!(segs.len() <= 6);
+    #[should_panic(expected = "cycle")]
+    fn cycle_is_rejected() {
+        Hld::new(&[vec![1, 2], vec![0, 2], vec![0, 1]], 0);
     }
 
     #[test]

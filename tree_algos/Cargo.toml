@@ -1,0 +1,10 @@
+[package]
+name = "tree_algos"
+version = "0.1.0"
+edition = "2021"
+description = "Small tree algorithms: Cartesian tree, weighted diameter, rooted-tree isomorphism classes."
+publish = false
+
+[lib]
+name = "tree_algos"
+path = "src/lib.rs"
