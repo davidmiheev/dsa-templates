@@ -1,0 +1,10 @@
+[package]
+name = "divisor_transform"
+version = "0.1.0"
+edition = "2021"
+description = "Zeta/Moebius transforms over divisors and multiples, GCD and LCM convolutions modulo a prime."
+publish = false
+
+[lib]
+name = "divisor_transform"
+path = "src/lib.rs"

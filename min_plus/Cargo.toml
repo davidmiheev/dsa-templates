@@ -1,0 +1,10 @@
+[package]
+name = "min_plus"
+version = "0.1.0"
+edition = "2021"
+description = "(min, +) convolution when one or both sequences are convex, or one is concave."
+publish = false
+
+[lib]
+name = "min_plus"
+path = "src/lib.rs"

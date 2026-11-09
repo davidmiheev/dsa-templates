@@ -1,0 +1,14 @@
+[package]
+name = "multivariate_convolution"
+version = "0.1.0"
+edition = "2021"
+description = "Multivariate polynomial products truncated (mod x_i^n_i) or cyclic (mod x_i^n_i - 1) in every variable."
+publish = false
+
+[dependencies]
+convolution = { path = "../convolution" }
+number_theory = { path = "../number_theory" }
+
+[lib]
+name = "multivariate_convolution"
+path = "src/lib.rs"

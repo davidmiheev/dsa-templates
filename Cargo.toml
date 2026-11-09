@@ -76,6 +76,13 @@ members = [
     "min_cost_flow",
     "extreme_sets",
     "deque",
+    "number_theory",
+    "set_power_series",
+    "divisor_transform",
+    "min_plus",
+    "multiplicative_convolution",
+    "multivariate_convolution",
+    "gf2_64",
 ]
 
 [workspace.package]

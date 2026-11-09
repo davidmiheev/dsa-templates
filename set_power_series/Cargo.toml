@@ -1,0 +1,10 @@
+[package]
+name = "set_power_series"
+version = "0.1.0"
+edition = "2021"
+description = "Subset/superset zeta and Moebius transforms, Walsh-Hadamard, AND/OR/XOR and subset convolution modulo a prime."
+publish = false
+
+[lib]
+name = "set_power_series"
+path = "src/lib.rs"
