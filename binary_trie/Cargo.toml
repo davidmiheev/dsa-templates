@@ -1,0 +1,10 @@
+[package]
+name = "binary_trie"
+version = "0.1.0"
+edition = "2021"
+description = "Binary trie over fixed-width integers: insert, remove, min/max xor."
+publish = false
+
+[lib]
+name = "binary_trie"
+path = "src/lib.rs"

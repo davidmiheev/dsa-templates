@@ -1,0 +1,13 @@
+[package]
+name = "persistent_lazy_segment_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Fully persistent lazy segment tree (path copying) with range copy between versions."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "persistent_lazy_segment_tree"
+path = "src/lib.rs"

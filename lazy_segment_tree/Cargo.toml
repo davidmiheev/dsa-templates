@@ -1,0 +1,13 @@
+[package]
+name = "lazy_segment_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Lazy-propagation segment tree over a monoid and a monoid of actions."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "lazy_segment_tree"
+path = "src/lib.rs"

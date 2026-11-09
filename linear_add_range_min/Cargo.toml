@@ -1,0 +1,10 @@
+[package]
+name = "linear_add_range_min"
+version = "0.1.0"
+edition = "2021"
+description = "Range add of b*i + c with range minimum, by sqrt decomposition with a convex hull per block."
+publish = false
+
+[lib]
+name = "linear_add_range_min"
+path = "src/lib.rs"

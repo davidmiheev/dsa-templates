@@ -22,6 +22,23 @@ members = [
     "heavy_light_decomposition",
     "centroid_decomposition",
     "suffix_automaton",
+    "algebra",
+    "lazy_segment_tree",
+    "li_chao_tree",
+    "binary_trie",
+    "fast_set",
+    "queue_aggregation",
+    "wavelet_matrix",
+    "implicit_treap",
+    "persistent_queue",
+    "persistent_lazy_segment_tree",
+    "dynamic_segment_tree",
+    "point_set_range_frequency",
+    "segment_tree_beats",
+    "linear_add_range_min",
+    "kd_tree",
+    "range_sort_sequence",
+    "seaweed",
 ]
 
 [workspace.package]

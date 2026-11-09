@@ -19,7 +19,20 @@
 //! ```
 //!
 //! For more elaborate query types build your own solver using
-//! [`solve_blocked`].
+//! [`solve_blocked`] (add and remove), or [`solve_rollback`] when the state can only be
+//! extended cheaply (modes, maxima, ...). [`range_inversions`] counts inversions in a range with
+//! "second-order" Mo in `O((n + q) sqrt n)`, with `O(1)` work per pointer move.
+
+mod inversions;
+mod rollback;
+
+pub use inversions::range_inversions;
+pub use rollback::solve_rollback;
+
+/// Block size that balances the two pointers: about `n / sqrt(q)` (at least 1).
+pub(crate) fn block_size(n: usize, q: usize) -> usize {
+    ((n as f64) / (q.max(1) as f64).sqrt()).ceil().max(1.0) as usize
+}
 
 /// A single query on a half-open interval `[lo, hi)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,12 +68,10 @@ pub fn solve_blocked<State, FAdd, FRemove, FVisit>(
     FRemove: FnMut(&mut State, usize),
     FVisit: FnMut(&mut State, usize),
 {
-    let _ = n;
     if queries.is_empty() {
         return;
     }
-    let block_size = (queries.len() as f64).sqrt().ceil() as usize;
-    assert!(block_size >= 1, "block size must be at least 1");
+    let block_size = block_size(n, queries.len());
 
     // Sort queries by Mo's ordering.
     let mut order: Vec<usize> = (0..queries.len()).collect();
@@ -105,15 +116,18 @@ pub fn count_distinct_in_range<T: Eq + std::hash::Hash + Copy>(
     a: &[T],
     queries: &[Query],
 ) -> Vec<usize> {
-    struct State<T> {
-        freq: std::collections::HashMap<T, usize>,
+    // Map every value to a small id once, so the hot loop is plain array indexing.
+    let mut ids: std::collections::HashMap<T, u32> = std::collections::HashMap::new();
+    let id: Vec<u32> = a.iter().map(|&x| {
+        let next = ids.len() as u32;
+        *ids.entry(x).or_insert(next)
+    }).collect();
+    struct State {
+        freq: Vec<u32>,
         distinct: usize,
     }
 
-    let mut state: State<T> = State {
-        freq: std::collections::HashMap::new(),
-        distinct: 0,
-    };
+    let mut state = State { freq: vec![0; ids.len()], distinct: 0 };
     let mut answers: Vec<usize> = vec![0; queries.len()];
 
     solve_blocked(
@@ -121,19 +135,14 @@ pub fn count_distinct_in_range<T: Eq + std::hash::Hash + Copy>(
         queries,
         &mut state,
         |st, idx| {
-            let entry = st.freq.entry(a[idx]).or_insert(0);
-            if *entry == 0 {
-                st.distinct += 1;
-            }
-            *entry += 1;
+            let f = &mut st.freq[id[idx] as usize];
+            st.distinct += (*f == 0) as usize;
+            *f += 1;
         },
         |st, idx| {
-            if let Some(v) = st.freq.get_mut(&a[idx]) {
-                *v -= 1;
-                if *v == 0 {
-                    st.distinct -= 1;
-                }
-            }
+            let f = &mut st.freq[id[idx] as usize];
+            *f -= 1;
+            st.distinct -= (*f == 0) as usize;
         },
         |st, qi| {
             answers[qi] = st.distinct;

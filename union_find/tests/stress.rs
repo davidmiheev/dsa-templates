@@ -197,3 +197,54 @@ fn adversarial_chains_stay_shallow() {
     }
     st.done();
 }
+
+#[test]
+fn plain_mode_matches_naive_connectivity() {
+    let mut st = Stress::new("union_find/plain");
+    for case in 0..300 * scale() {
+        let mut rng = Rng::new(40_000 + case as u64);
+        let n = rng.range(1, 40) as usize;
+        let mut uf = union_find::plain(n);
+        let mut model = Naive::new(n, add, 0);
+        st.case();
+        for step in 0..150 {
+            let (x, y) = (rng.below(n + 1), rng.below(n + 1));
+            if rng.chance(1, 2) {
+                assert_eq!(uf.merge(x, y), model.union(x, y, 0), "merge({x},{y}) case {case} step {step}");
+            } else {
+                assert_eq!(uf.are_connected(x, y), model.comp[x] == model.comp[y], "case {case} step {step}");
+                assert_eq!(uf.get_size(x), model.size[model.comp[x]], "size case {case} step {step}");
+            }
+            assert_eq!(uf.get_components(), model.components);
+            st.ops(1);
+        }
+    }
+    st.done();
+}
+
+#[test]
+fn characters_can_have_any_copy_type() {
+    // (sum of weights, number of unions) as a tuple character, and f64 as a scalar one.
+    let mut st = Stress::new("union_find/generic_c");
+    for case in 0..200 * scale() {
+        let mut rng = Rng::new(60_000 + case as u64);
+        let n = rng.range(1, 30) as usize;
+        let mut uf = UnionFind::new(n, |a: (i64, u32), b: (i64, u32)| (a.0 + b.0, a.1 + b.1), (0, 0));
+        let mut ff = UnionFind::new(n, |a: f64, b: f64| a.max(b), f64::NEG_INFINITY);
+        let mut m_sum = Naive::new(n, add, 0);
+        st.case();
+        for _ in 0..100 {
+            let (x, y, w) = (rng.below(n + 1), rng.below(n + 1), rng.below(50));
+            uf.union(x, y, (w as i64, 1));
+            ff.union(x, y, w as f64);
+            m_sum.union(x, y, w);
+            let c = m_sum.comp[x];
+            // The pair's first field follows the same fold as the usize-sum model.
+            assert_eq!(uf.get_character(x).0 as usize, m_sum.chr[c], "tuple sum case {case}");
+            assert_eq!(uf.get_size(x), m_sum.size[c]);
+            assert!(ff.get_character(x) >= 0.0 || w == 0 && ff.get_character(x) == f64::NEG_INFINITY);
+            st.ops(1);
+        }
+    }
+    st.done();
+}

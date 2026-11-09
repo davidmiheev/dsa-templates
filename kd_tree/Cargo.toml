@@ -1,0 +1,13 @@
+[package]
+name = "kd_tree"
+version = "0.1.0"
+edition = "2021"
+description = "Static-shape 2D kd-tree with lazy range actions: rectangle fold, rectangle apply, point set."
+publish = false
+
+[dependencies]
+algebra = { path = "../algebra" }
+
+[lib]
+name = "kd_tree"
+path = "src/lib.rs"

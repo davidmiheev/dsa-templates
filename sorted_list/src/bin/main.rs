@@ -2,7 +2,7 @@ use sorted_list::SortedList;
 
 /// Driver for the sorted list example.
 pub fn run() {
-    println!("Sorted List (Treap)");
+    println!("Sorted List (buckets)");
 
     let mut sl = SortedList::new();
     sl.insert(5);
@@ -16,14 +16,14 @@ pub fn run() {
     println!("bisect_right(5): {}", sl.bisect_right(5));
 
     for i in 0..sl.len() {
-        print!("{:?} ", sl.get(i).unwrap());
+        print!("{:?} ", sl.get(i));
     }
     println!();
 
     sl.remove(5);
     println!("After removing 5:");
     for i in 0..sl.len() {
-        print!("{:?} ", sl.get(i).unwrap());
+        print!("{:?} ", sl.get(i));
     }
     println!();
 }
@@ -48,19 +48,19 @@ mod tests {
             sl.insert(k);
         }
         assert_eq!(sl.len(), 5);
-        let collected: Vec<i64> = (0..sl.len()).map(|i| sl.get(i).unwrap()).collect();
+        let collected: Vec<i64> = (0..sl.len()).map(|i| sl.get(i)).collect();
         assert_eq!(collected, vec![1, 3, 5, 8, 9]);
     }
 
     #[test]
     fn bisect_left_right_consistent_with_iteration() {
-        // The treap stores keys by `Ord`, so for any `key`,
+        // The list stores keys by `Ord`, so for any `key`,
         // `bisect_left(key)` must equal the count of iterated keys < key.
         let mut sl = SortedList::new();
         for &k in &[5, 3, 8, 1, 9, 3, 7] {
             sl.insert(k);
         }
-        let collected: Vec<i64> = (0..sl.len()).map(|i| sl.get(i).unwrap()).collect();
+        let collected: Vec<i64> = (0..sl.len()).map(|i| sl.get(i)).collect();
         for probe in &[0i64, 1, 4, 7, 10] {
             let expected_left = collected.iter().filter(|&&x| x < *probe).count();
             let expected_right = collected.iter().filter(|&&x| x <= *probe).count();
@@ -89,8 +89,16 @@ mod tests {
         sl.remove(5);
         // one 5 should remain
         assert_eq!(sl.len(), 4);
-        let collected: Vec<i64> = (0..sl.len()).map(|i| sl.get(i).unwrap()).collect();
+        let collected: Vec<i64> = (0..sl.len()).map(|i| sl.get(i)).collect();
         assert_eq!(collected, vec![3, 3, 5, 8]);
+    }
+
+    #[test]
+    #[should_panic(expected = "out of range")]
+    fn get_out_of_range_panics() {
+        let mut sl = SortedList::new();
+        sl.insert(1);
+        sl.get(1);
     }
 
     #[test]

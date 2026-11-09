@@ -1,0 +1,10 @@
+[package]
+name = "fast_set"
+version = "0.1.0"
+edition = "2021"
+description = "64-ary bitset tree: insert, remove, successor and predecessor in O(log_64 n)."
+publish = false
+
+[lib]
+name = "fast_set"
+path = "src/lib.rs"
