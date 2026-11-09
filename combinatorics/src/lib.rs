@@ -9,6 +9,7 @@
 //!   small-prime / huge-`n` versions [`stirling1_small_prime`], [`stirling2_small_prime`].
 //! * [`bell_numbers`], [`partition_numbers`], [`subset_sum_counts`], [`derangements_mod`],
 //!   [`distinct_subsequences`].
+//! * [`sum_exponential_times_polynomial`] (and the infinite-series limit): `sum r^i i^d` in `O(d)`.
 //! * [`count_increasing_sequences`]: nondecreasing sequences between two bounding sequences.
 //!
 //! # Example
@@ -21,6 +22,7 @@
 //! ```
 
 mod barrett;
+mod exponential_sum;
 mod binomial;
 mod factorial;
 mod lattice;
@@ -28,6 +30,7 @@ mod sequences;
 mod stirling;
 
 pub use binomial::{BinomialMod, BinomialPrime, QBinomialPrime};
+pub use exponential_sum::{sum_exponential_times_polynomial, sum_exponential_times_polynomial_limit};
 pub use factorial::BlockFactorials;
 pub use lattice::{count_increasing_sequences, count_with_base};
 pub use sequences::{
