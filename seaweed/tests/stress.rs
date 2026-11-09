@@ -147,3 +147,39 @@ fn range_lis_large() {
 fn out_of_range_query_panics() {
     range_lis(&[1, 2, 3], &[(2, 4)], true);
 }
+
+#[test]
+fn prefix_substring_lcs_matches_dp() {
+    use seaweed::prefix_substring_lcs;
+    let mut st = Stress::new("seaweed/lcs");
+    for case in 0..1500 * scale() {
+        let mut rng = Rng::new(40_000 + case as u64);
+        let (m, n) = (1 + rng.below(12), 1 + rng.below(12));
+        let sigma = 1 + rng.below(4);
+        let s: Vec<u8> = (0..m).map(|_| rng.below(sigma) as u8).collect();
+        let t: Vec<u8> = (0..n).map(|_| rng.below(sigma) as u8).collect();
+        let mut queries = Vec::new();
+        for a in 0..=m {
+            for b in 0..=n {
+                for c in b..=n {
+                    queries.push((a, b, c));
+                }
+            }
+        }
+        let got = prefix_substring_lcs(&s, &t, &queries);
+        for (&(a, b, c), &g) in queries.iter().zip(&got) {
+            // plain dynamic programming
+            let (x, y) = (&s[..a], &t[b..c]);
+            let mut dp = vec![vec![0usize; y.len() + 1]; x.len() + 1];
+            for i in 0..x.len() {
+                for j in 0..y.len() {
+                    dp[i + 1][j + 1] = if x[i] == y[j] { dp[i][j] + 1 } else { dp[i][j + 1].max(dp[i + 1][j]) };
+                }
+            }
+            assert_eq!(g, dp[x.len()][y.len()], "s={s:?} t={t:?} query=({a},{b},{c})");
+        }
+        st.case();
+        st.ops(queries.len());
+    }
+    st.done();
+}

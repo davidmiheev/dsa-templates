@@ -2,6 +2,8 @@
 //!
 //! * [`steady_ant`] multiplies two permutations in the *unit-Monge* sense (the min-plus
 //!   product of their distribution matrices) in `O(n log n)`.
+//! * [`prefix_substring_lcs`]: the longest common subsequence of a prefix of `s` and a substring
+//!   of `t`, many queries offline in `O(|s| |t| + q log |t|)` by combing the seaweeds row by row.
 //! * [`range_lis`] answers many queries "length of the longest increasing subsequence of
 //!   `a[l..r]`" offline in `O((n + q) log^2 n)`: the whole sequence is turned into a single
 //!   seaweed permutation by divide and conquer over positions (every merge is one
@@ -317,6 +319,74 @@ pub fn range_lis<T: Ord + Copy>(a: &[T], queries: &[(usize, usize)], strict: boo
         }
         let before_l = if l == 0 { 0 } else { fenwick.sum_first(l) as usize };
         answers[qi] = (r - l) - (total - before_l);
+    }
+    answers
+}
+
+/// For every query `(a, b, c)`, the length of the longest common subsequence of `s[..a]` and
+/// `t[b..c]`, in `O(|s| |t| + (|t| + q) log |t|)`.
+///
+/// The seaweeds (sticky braid) of the first `a` rows of the alignment grid are combed row by row;
+/// afterwards `LCS = (c - b) - #{ top seaweeds starting at a column >= b and ending at a bottom
+/// column < c }`, counted offline per `a` with a Fenwick tree.
+///
+/// # Panics
+/// Panics unless `a <= |s|` and `b <= c <= |t|` for every query.
+pub fn prefix_substring_lcs<T: PartialEq>(s: &[T], t: &[T], queries: &[(usize, usize, usize)]) -> Vec<usize> {
+    let (m, n) = (s.len(), t.len());
+    for &(a, b, c) in queries {
+        assert!(a <= m && b <= c && c <= n, "invalid query ({a}, {b}, {c})");
+    }
+    let mut by_a: Vec<Vec<usize>> = vec![Vec::new(); m + 1];
+    for (i, &(a, _, _)) in queries.iter().enumerate() {
+        by_a[a].push(i);
+    }
+    let mut answers = vec![0usize; queries.len()];
+    // v[j]: label of the seaweed on the vertical edge below the processed rows in column j;
+    // labels `m + j` start at the top of column j, labels below `m` at the left of a row
+    let mut v: Vec<usize> = (0..n).map(|j| m + j).collect();
+    let mut fen = FenwickTree::<i32>::with_len(n.max(1));
+    let answer_row = |v: &[usize], ids: &[usize], fen: &mut FenwickTree<i32>, answers: &mut [usize]| {
+        if ids.is_empty() {
+            return;
+        }
+        // point (x, y): the seaweed from the top of column x leaves through the bottom of column y
+        let mut start_of = vec![NONE; n];
+        for (y, &label) in v.iter().enumerate() {
+            if label >= m {
+                start_of[label - m] = y as u32;
+            }
+        }
+        let mut order = ids.to_vec();
+        order.sort_unstable_by_key(|&i| std::cmp::Reverse(queries[i].1));
+        *fen = FenwickTree::<i32>::with_len(n.max(1));
+        let mut x = n;
+        for qi in order {
+            let (_, b, c) = queries[qi];
+            while x > b {
+                x -= 1;
+                if start_of[x] != NONE {
+                    fen.update(start_of[x] as usize, 1);
+                }
+            }
+            // starts >= b with end < c
+            let inside = if c == 0 { 0 } else { fen.sum_first(c) as usize };
+            answers[qi] = (c - b) - inside;
+        }
+    };
+    answer_row(&v, &by_a[0], &mut fen, &mut answers);
+    for i in 0..m {
+        let mut h = m - 1 - i; // the seaweed entering row i from the left
+        for j in 0..n {
+            let (hl, vt) = (h, v[j]);
+            if s[i] == t[j] || hl > vt {
+                // the seaweeds bounce: the horizontal one continues down, the vertical one right
+                v[j] = hl;
+                h = vt;
+            }
+            // otherwise they cross and keep their directions
+        }
+        answer_row(&v, &by_a[i + 1], &mut fen, &mut answers);
     }
     answers
 }

@@ -1,0 +1,14 @@
+[package]
+name = "strings"
+version = "0.1.0"
+edition = "2021"
+description = "String algorithms: suffix array (SA-IS), LCP, Z-function, Manacher, Lyndon factorisation, Aho-Corasick, eertree and double-ended eertree, runs, wildcard matching."
+publish = false
+
+[dependencies]
+convolution = { path = "../convolution" }
+sparse_table = { path = "../sparse_table" }
+
+[lib]
+name = "strings"
+path = "src/lib.rs"
