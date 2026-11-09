@@ -1,6 +1,12 @@
-//! Dense matrices over `Z/MZ` (prime `M`) as `Vec<Vec<StaticModInt<M>>>`.
+//! Dense matrices over `Z/MZ` (prime `M`).
 //!
-//! [`determinant`] is Gaussian elimination in `O(n^3)`.
+//! * [`determinant`]: Gaussian elimination on a `Vec<Vec<StaticModInt<M>>>`, `O(n^3)`.
+//! * [`Matrix`]: a flat row-major matrix of residues with product (cache-blocked, AVX2 when
+//!   available), power, determinant, rank, inverse, adjugate (also for singular matrices),
+//!   linear systems, characteristic polynomial (Hessenberg form) and Pfaffian.
+//! * [`hafnian`]: the hafnian of a symmetric matrix with zero diagonal in `O(2^{n/2} n^2 d^2)`.
+//! * [`sparse_determinant`]: Wiedemann's algorithm for a sparse matrix.
+//! * [`determinant_mod`]: determinant modulo an arbitrary integer (Euclidean elimination).
 //!
 //! # Example
 //!
@@ -12,7 +18,30 @@
 //! assert_eq!(determinant(a), -Mint::new(2));
 //! ```
 
+mod arbitrary;
+mod hafnian;
+mod matrix;
+mod sparse;
+
+pub use arbitrary::determinant_mod;
+pub use hafnian::hafnian;
+pub use matrix::Matrix;
+pub use sparse::sparse_determinant;
+
 use modint::StaticModInt;
+
+/// `base^e mod M`.
+pub(crate) fn pow_u32<const M: u32>(base: u32, mut e: u64) -> u32 {
+    let (mut r, mut b) = (1u64, base as u64 % M as u64);
+    while e > 0 {
+        if e & 1 == 1 {
+            r = r * b % M as u64;
+        }
+        b = b * b % M as u64;
+        e >>= 1;
+    }
+    r as u32
+}
 
 /// Determinant of a square matrix (consumed, as it is eliminated in place). The determinant of
 /// the `0 x 0` matrix is 1.

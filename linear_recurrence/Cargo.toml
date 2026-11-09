@@ -1,0 +1,13 @@
+[package]
+name = "linear_recurrence"
+version = "0.1.0"
+edition = "2021"
+description = "Berlekamp-Massey: the shortest linear recurrence of a sequence over a prime field."
+publish = false
+
+[dependencies]
+modint = { path = "../modint" }
+
+[lib]
+name = "linear_recurrence"
+path = "src/lib.rs"
