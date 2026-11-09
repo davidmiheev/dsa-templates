@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "two_sat",
     "subsequence",
+    "bigint",
     "geometry",
     "strings",
     "combinatorics",
