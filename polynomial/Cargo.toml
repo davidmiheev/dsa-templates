@@ -1,0 +1,15 @@
+[package]
+name = "polynomial"
+version = "0.1.0"
+edition = "2021"
+description = "Polynomials and formal power series over NTT-friendly prime fields: inv/log/exp/pow/sqrt, division, multipoint evaluation, interpolation, composition, ..."
+publish = false
+
+[dependencies]
+modint = { path = "../modint" }
+convolution = { path = "../convolution" }
+number_theory = { path = "../number_theory" }
+
+[lib]
+name = "polynomial"
+path = "src/lib.rs"

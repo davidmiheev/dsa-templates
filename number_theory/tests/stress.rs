@@ -1,6 +1,6 @@
 //! Stress test: primality and factorisation against trial division, primitive roots by order.
 
-use number_theory::{factorize, gcd, is_prime, mod_inverse, mul_mod, pow_mod, primitive_root};
+use number_theory::{factorize, gcd, is_prime, mod_inverse, mod_sqrt, mul_mod, pow_mod, primitive_root, NONE};
 
 #[path = "../../stress_common.rs"]
 mod common;
@@ -95,4 +95,22 @@ fn modular_helpers_and_primitive_roots() {
     }
     assert_eq!(primitive_root(998_244_353), 3);
     assert_eq!(primitive_root(1_000_000_007), 5);
+}
+
+#[test]
+fn square_roots() {
+    for p in (2..300u64).filter(|&p| is_prime(p)).chain([998_244_353, 1_000_000_007, 469_762_049]) {
+        let mut rng = Rng::new(p);
+        let probes: Vec<u64> = if p < 300 { (0..p).collect() } else { (0..200).map(|_| rng.next_u64() % p).collect() };
+        for a in probes {
+            let r = mod_sqrt(a, p);
+            let residue = a == 0 || p == 2 || pow_mod(a, (p - 1) / 2, p) == 1;
+            if residue {
+                assert_ne!(r, NONE, "a={a} p={p}");
+                assert_eq!(mul_mod(r, r, p), a % p, "a={a} p={p}");
+            } else {
+                assert_eq!(r, NONE, "a={a} p={p}");
+            }
+        }
+    }
 }
