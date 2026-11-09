@@ -8,6 +8,10 @@
 //!   pairs with `i & j = k` (resp. `|`, `^`).
 //! * [`subset_convolution`]: `c[S] = sum_{T subset S} a[T] b[S \ T]`, by ranking the sets with
 //!   their sizes: `O(n^2 2^n)`.
+//! * [`subset_exp`], [`subset_log`]: `exp` / `log` of a set power series (the ring of the
+//!   subset convolution), `O(n^2 2^n)`.
+//! * [`subset_compose`]: `f(s)` for a univariate polynomial `f`; [`subset_power_projection`]:
+//!   `<w, s^m>` for all `m < M` (its transpose). `O(n^2 2^n + M n)`.
 //!
 //! # Example
 //!
@@ -179,50 +183,7 @@ pub fn xor_convolution<const M: u32>(a: &[u32], b: &[u32]) -> Vec<u32> {
     fa
 }
 
-/// `c[S] = sum_{T subset S} a[T] b[S \ T]`. Both slices need the same power-of-two length.
-pub fn subset_convolution<const M: u32>(a: &[u32], b: &[u32]) -> Vec<u32> {
-    assert_eq!(a.len(), b.len(), "length mismatch");
-    let len = check_len(a.len());
-    let n = len.trailing_zeros() as usize;
-    if n == 0 {
-        return vec![(a[0] as u64 * b[0] as u64 % M as u64) as u32];
-    }
-    // ranked[r][S] = a[S] if |S| = r else 0, then zeta transformed
-    let rank = |v: &[u32]| -> Vec<Vec<u32>> {
-        let mut out = vec![vec![0u32; len]; n + 1];
-        for (s, &x) in v.iter().enumerate() {
-            out[s.count_ones() as usize][s] = x;
-        }
-        for layer in out.iter_mut() {
-            zeta_subset::<M>(layer);
-        }
-        out
-    };
-    let (ra, rb) = (rank(a), rank(b));
-    let mut c = vec![0u32; len];
-    let lim = 8 * (M as u64) * (M as u64);
-    let mut acc = vec![0u64; len];
-    let mut layer = vec![0u32; len];
-    for k in 0..=n {
-        acc.iter_mut().for_each(|x| *x = 0);
-        for i in 0..=k {
-            let (x, y) = (&ra[i], &rb[k - i]);
-            for ((t, &u), &v) in acc.iter_mut().zip(x).zip(y) {
-                *t += u as u64 * v as u64;
-                if *t >= lim {
-                    *t -= lim;
-                }
-            }
-        }
-        for (l, &t) in layer.iter_mut().zip(&acc) {
-            *l = (t % M as u64) as u32;
-        }
-        mobius_subset::<M>(&mut layer);
-        for (s, &v) in layer.iter().enumerate() {
-            if s.count_ones() as usize == k {
-                c[s] = v;
-            }
-        }
-    }
-    c
-}
+mod ranked;
+pub use ranked::{
+    subset_compose, subset_convolution, subset_exp, subset_log, subset_power_projection,
+};
