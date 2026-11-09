@@ -164,7 +164,7 @@ fn convolution_beyond_two_to_the_23() {
     if scale() < 2 {
         return;
     }
-    let mut st = Stress::new("convolution/2^24");
+    let st = Stress::new("convolution/2^24");
     let n = (1usize << 23) + 5;
     let ones = vec![1u32; n];
     let c = convolution_large(&ones, &ones);

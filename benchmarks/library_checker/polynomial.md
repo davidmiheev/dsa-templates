@@ -25,6 +25,8 @@ to build on.
 
 Compared against ac on 6 problems: geometric mean of ours/ac = **0.72**; 6 within 10% or faster, 0 slower than that.
 
+> **Note on the timings.** They were measured with the portable radix-4 transforms. The `convolution` crate now runs its NTT on AVX2 when the CPU has it (identical results): the NTT-bound solutions of this table are 1.4-2.6x faster, see [`../ntt_engines.md`](../ntt_engines.md) for the profile, the engines compared and per-problem before / after numbers.
+
 New crates driven by this category: `polynomial` — `fps` (inverse, log, exp, pow, sqrt,
 division with remainder, bivariate inverse), `sparse` (the `O(N K)` versions), `special` (Taylor
 shift, shifting sampling points, geometric evaluation and interpolation, prefix sums, products of

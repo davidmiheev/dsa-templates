@@ -19,6 +19,8 @@ quoted in the comments.
 
 ac-library-rs has nothing for this category. Against the reference C++ solutions: within 10% or faster on 6 of 6 problems; geometric mean of ours / reference = **0.39**.
 
+> **Note on the timings.** They were measured with the portable radix-4 transforms. The `convolution` crate now runs its NTT on AVX2 when the CPU has it (identical results): the NTT-bound solutions of this table are 1.4-2.6x faster, see [`../ntt_engines.md`](../ntt_engines.md) for the profile, the engines compared and per-problem before / after numbers.
+
 New crate `bigint`: `BigUint<BASE>` / `BigInt<BASE>` for any `BASE <= 2^20` with `Decimal` (`10^6`)
 and `Hex` (`16^5`) aliases, parsing and printing, addition, subtraction, NTT multiplication and
 Newton division with remainder. Randomized stress tests against `i128`, a schoolbook product and

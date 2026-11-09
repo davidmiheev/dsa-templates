@@ -6,12 +6,18 @@ use number_theory::{mod_sqrt, NONE};
 
 type Mint<const M: u32> = StaticModInt<M>;
 
-fn to_raw<const M: u32>(a: &[Mint<M>]) -> Vec<u32> {
-    a.iter().map(|x| x.val()).collect()
+/// The residues as plain `u32`s, without copying.
+fn as_raw<const M: u32>(a: &[Mint<M>]) -> &[u32] {
+    // SAFETY: `StaticModInt<M>` is `repr(transparent)` over `u32`.
+    unsafe { std::slice::from_raw_parts(a.as_ptr().cast::<u32>(), a.len()) }
 }
 
+/// Residues (each `< M`) as `Mint`s, reusing the allocation.
 fn from_raw<const M: u32>(a: Vec<u32>) -> Vec<Mint<M>> {
-    a.into_iter().map(Mint::<M>::raw).collect()
+    debug_assert!(a.iter().all(|&x| x < M));
+    let mut a = std::mem::ManuallyDrop::new(a);
+    // SAFETY: same size and alignment (`repr(transparent)`), the parts come from a live `Vec`.
+    unsafe { Vec::from_raw_parts(a.as_mut_ptr().cast::<Mint<M>>(), a.len(), a.capacity()) }
 }
 
 /// Product of two polynomials (length `a.len() + b.len() - 1`, empty if either is empty).
@@ -19,7 +25,7 @@ pub fn mul<const M: u32>(a: &[Mint<M>], b: &[Mint<M>]) -> Vec<Mint<M>> {
     if a.is_empty() || b.is_empty() {
         return Vec::new();
     }
-    from_raw(convolution_mod::<M>(&to_raw(a), &to_raw(b)))
+    from_raw(convolution_mod::<M>(as_raw(a), as_raw(b)))
 }
 
 /// The first `n` coefficients of `a * b`.

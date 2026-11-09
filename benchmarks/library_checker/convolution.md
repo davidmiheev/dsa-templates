@@ -26,6 +26,8 @@ to build on.
 
 Compared against ac on 2 problems: geometric mean of ours/ac = **0.97**; 2 within 10% or faster, 0 slower than that.
 
+> **Note on the timings.** They were measured with the portable radix-4 transforms. The `convolution` crate now runs its NTT on AVX2 when the CPU has it (identical results): the NTT-bound solutions of this table are 1.4-2.6x faster, see [`../ntt_engines.md`](../ntt_engines.md) for the profile, the engines compared and per-problem before / after numbers.
+
 New or reworked crates driven by this category: `convolution` (radix-4 Montgomery NTT without bit
 reversal, arbitrary modulus by three primes, block decomposition for results beyond `2^23`,
 convolution modulo `2^64`), `set_power_series` (zeta / Moebius / Walsh-Hadamard, AND / OR / XOR
