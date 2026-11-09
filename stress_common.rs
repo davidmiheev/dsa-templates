@@ -55,7 +55,9 @@ impl Rng {
 
     /// Random lowercase string over the first `alphabet` letters.
     pub fn string(&mut self, len: usize, alphabet: usize) -> String {
-        (0..len).map(|_| (b'a' + self.below(alphabet) as u8) as char).collect()
+        (0..len)
+            .map(|_| (b'a' + self.below(alphabet) as u8) as char)
+            .collect()
     }
 
     /// Random labelled tree on `n` vertices as an adjacency list.
@@ -66,7 +68,13 @@ impl Rng {
             let p = match shape {
                 1 => v - 1,
                 2 => 0,
-                3 => if v % 2 == 1 { v.saturating_sub(2) } else { v - 1 },
+                3 => {
+                    if v % 2 == 1 {
+                        v.saturating_sub(2)
+                    } else {
+                        v - 1
+                    }
+                }
                 _ => self.below(v),
             };
             adj[p].push(v);
@@ -78,7 +86,10 @@ impl Rng {
 
 /// Number of random cases is multiplied by this (`STRESS_SCALE` env var, default 1).
 pub fn scale() -> usize {
-    std::env::var("STRESS_SCALE").ok().and_then(|s| s.parse().ok()).unwrap_or(1)
+    std::env::var("STRESS_SCALE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1)
 }
 
 /// Case/operation counter that prints a summary line when finished.
@@ -91,7 +102,12 @@ pub struct Stress {
 
 impl Stress {
     pub fn new(name: &'static str) -> Self {
-        Stress { name, cases: 0, ops: 0, start: Instant::now() }
+        Stress {
+            name,
+            cases: 0,
+            ops: 0,
+            start: Instant::now(),
+        }
     }
 
     pub fn case(&mut self) {
