@@ -7,6 +7,11 @@
 //!   primes and Brent's variant of Pollard's rho; expected `O(n^{1/4})`.
 //! * [`primitive_root`]: a generator of the multiplicative group modulo a prime.
 //! * [`mod_sqrt`]: a square root modulo a prime (Tonelli–Shanks), [`NONE`] if there is none.
+//! * [`isqrt`], [`kth_root`] (integer roots), [`kth_root_mod`] (`x^k = y` modulo a prime).
+//! * [`discrete_log`] (general modulus), [`discrete_log_prime`] (Pohlig–Hellman) and [`PrimeLog`]
+//!   (many logarithms modulo one prime).
+//! * [`floor_sum`], [`min_mod_linear`], [`euler_phi`], [`tetration_mod`].
+//! * [`NimMultiplier`] (nim products), [`gaussian_gcd`] and [`two_squares`].
 //!
 //! # Example
 //!
@@ -17,6 +22,20 @@
 //! assert_eq!(factorize(600_851_475_143), vec![(71, 1), (839, 1), (1471, 1), (6857, 1)]);
 //! assert_eq!(primitive_root(998_244_353), 3);
 //! ```
+
+mod arith;
+mod dlog;
+mod gaussian;
+mod mont;
+use mont::Mont;
+mod nim;
+mod roots;
+
+pub use arith::{euler_phi, floor_sum, min_mod_linear, tetration_mod};
+pub use dlog::{discrete_log, discrete_log_prime, PrimeLog};
+pub use gaussian::{gaussian_gcd, two_squares};
+pub use nim::NimMultiplier;
+pub use roots::{isqrt, kth_root, kth_root_mod};
 
 /// `a * b mod m` without overflow (`m > 0`).
 pub fn mul_mod(a: u64, b: u64, m: u64) -> u64 {
@@ -61,27 +80,35 @@ pub fn mod_inverse(a: u64, m: u64) -> u64 {
     t0.rem_euclid(m as i128) as u64
 }
 
-/// Deterministic primality test for any `u64`.
+/// Deterministic primality test for any `u64` (Miller–Rabin with the seven bases of Jim Sinclair,
+/// in Montgomery arithmetic).
 pub fn is_prime(n: u64) -> bool {
     if n < 2 {
         return false;
     }
-    const BASES: [u64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
-    for &p in &BASES {
+    for p in [2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37] {
         if n.is_multiple_of(p) {
             return n == p;
         }
     }
+    if n < 37 * 37 {
+        return true;
+    }
     let s = (n - 1).trailing_zeros();
     let d = (n - 1) >> s;
-    'bases: for &a in &BASES {
-        let mut x = pow_mod(a, d, n);
-        if x == 1 || x == n - 1 {
+    let mont = Mont::new(n);
+    let (one, minus_one) = (mont.one, mont.to_mont(n - 1));
+    'bases: for a in [2u64, 325, 9375, 28178, 450_775, 9_780_504, 1_795_265_022] {
+        if a % n == 0 {
+            continue;
+        }
+        let mut x = mont.pow(mont.to_mont(a), d);
+        if x == one || x == minus_one {
             continue;
         }
         for _ in 1..s {
-            x = mul_mod(x, x, n);
-            if x == n - 1 {
+            x = mont.mul(x, x);
+            if x == minus_one {
                 continue 'bases;
             }
         }
@@ -90,15 +117,25 @@ pub fn is_prime(n: u64) -> bool {
     true
 }
 
-/// A nontrivial divisor of the composite `n` (Brent's cycle detection with batched gcds).
+/// A nontrivial divisor of the odd composite `n` (Brent's cycle detection with batched gcds, in
+/// Montgomery arithmetic).
 fn rho(n: u64) -> u64 {
     if n.is_multiple_of(2) {
         return 2;
     }
-    let mut c = 1u64;
+    let mont = Mont::new(n);
+    let mut c = mont.to_mont(1);
     loop {
-        let f = |x: u64| (mul_mod(x, x, n) + c) % n;
-        let (mut x, mut y, mut q, mut g) = (2u64, 2u64, 1u64, 1u64);
+        let f = |x: u64| {
+            let v = mont.mul(x, x) + c;
+            if v >= n || v < c {
+                v.wrapping_sub(n)
+            } else {
+                v
+            }
+        };
+        let start = mont.to_mont(2);
+        let (mut x, mut y, mut q, mut g) = (start, start, mont.one, 1u64);
         let (mut r, m) = (1usize, 128usize);
         let mut ys = y;
         while g == 1 {
@@ -111,7 +148,7 @@ fn rho(n: u64) -> u64 {
                 ys = y;
                 for _ in 0..m.min(r - k) {
                     y = f(y);
-                    q = mul_mod(q, x.abs_diff(y), n);
+                    q = mont.mul(q, x.abs_diff(y));
                 }
                 g = gcd(q, n);
                 k += m;
@@ -128,7 +165,7 @@ fn rho(n: u64) -> u64 {
         if g != n {
             return g;
         }
-        c += 1;
+        c = f(c);
     }
 }
 

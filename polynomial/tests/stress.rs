@@ -431,3 +431,31 @@ fn composition_and_inverse() {
         assert_eq!(back, x, "inverse case {case} n={n}");
     }
 }
+
+#[test]
+fn bernoulli_recurrence() {
+    // sum_{k=0}^{m} C(m+1, k) B_k = 0 for m >= 1, with B_0 = 1, B_1 = -1/2
+    let mut st = Stress::new("polynomial/bernoulli");
+    for n in [0usize, 1, 2, 3, 10, 50, 200, 700] {
+        let b = polynomial::special::bernoulli_numbers::<998_244_353>(n);
+        assert_eq!(b.len(), n + 1);
+        assert_eq!(b[0], Mint::new(1));
+        if n >= 1 {
+            assert_eq!(b[1], -Mint::new(2).inv());
+        }
+        let mut binom = vec![Mint::new(1), Mint::new(1)]; // row 1
+        for m in 1..=n {
+            // row m + 1 of Pascal's triangle
+            let mut next = vec![Mint::new(1); m + 2];
+            for k in 1..=m {
+                next[k] = binom[k - 1] + binom[k];
+            }
+            binom = next;
+            let sum = (0..=m).fold(Mint::zero(), |a, k| a + binom[k] * b[k]);
+            assert_eq!(sum, Mint::zero(), "m = {m}");
+        }
+        st.case();
+        st.ops(n * n);
+    }
+    st.done();
+}

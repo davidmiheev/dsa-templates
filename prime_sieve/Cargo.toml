@@ -1,0 +1,10 @@
+[package]
+name = "prime_sieve"
+version = "0.1.0"
+edition = "2021"
+description = "Segmented prime sieve and linear sieves for the Moebius and totient functions."
+publish = false
+
+[lib]
+name = "prime_sieve"
+path = "src/lib.rs"
