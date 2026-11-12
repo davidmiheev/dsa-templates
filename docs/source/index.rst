@@ -74,3 +74,4 @@ Indices and tables
    multiset
    one_line
    math
+   rust_crates
