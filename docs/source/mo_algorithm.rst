@@ -4,7 +4,7 @@ Mo's Algorithm
 Mo's algorithm for offline range queries.
 
 Mo's algorithm solves queries of the form "given a value array and a
-list of range queries, answer each query using only O(|hi - lo|) moves
+list of range queries, answer each query using only ``O(|hi - lo|)`` moves
 between consecutive queries (with O(1) amortized per move) once the
 queries have been reordered by Mo's block ordering.
 

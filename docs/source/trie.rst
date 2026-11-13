@@ -14,7 +14,7 @@ Rust Implementation
    :linenos:
 
 Python Implementation
---------------------
+---------------------
 .. automodule:: trie.trie
     :members:
     :undoc-members:

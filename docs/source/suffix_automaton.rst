@@ -11,7 +11,7 @@ hence to a distinct set of substrings.
 
 Once built, you can answer:
 
-* Is ``p`` a substring of ``s``? (O(|p|))
+* Is ``p`` a substring of ``s``? (``O(|p|)``)
 * How many distinct substrings does ``s`` have? (sum over states of
   ``len(state) - len(link(state))``)
 * Number of occurrences of a pattern (when ``state.occ`` is computed)
