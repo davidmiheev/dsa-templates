@@ -29,3 +29,14 @@ Topological sort can be used to schedule tasks in a multi-core processor
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+Rust Implementation
+-------------------
+
+.. rust-api:: top_sort
+   :description: Generated API reference for the Topological Sort crate.
+
+.. literalinclude:: ../../top_sort/src/lib.rs
+   :language: rust
+   :linenos:

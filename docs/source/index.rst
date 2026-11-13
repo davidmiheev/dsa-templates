@@ -19,38 +19,14 @@ Collection of data structures and algos implementations in Python 3 and Rust
    :maxdepth: 2
    :caption: Contents:
 
-
-   stack
-   queue
-   all_subsets
-   binary_search
-   binary_tree
-   binary_search_tree
-   graph
-   trie
-   dynamic_programming
-   backtracking
-   union_find
-   minimum_spanning_tree
-   fenwick_tree
-   segment_tree
-   sparse_table
-   sorted_list
-   interval_tree
-   suffix_automaton
-   rolling_hash
-   bit_manipulation
-   mo_algorithm
-   heavy_light_decomposition
-   centroid_decomposition
-   bfs
-   dfs
-   dijkstra
-   topological_sort
-   multiset
-   one_line
-   math
-   rust_crates
+   data_structures
+   trees
+   graphs
+   strings
+   number_theory
+   polynomials
+   geometry
+   techniques
 
 
 Indices and tables

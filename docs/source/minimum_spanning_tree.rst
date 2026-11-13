@@ -14,3 +14,14 @@ Prim's Algorithm
 ----------------
 
 Coming soon
+
+
+Rust Implementation
+-------------------
+
+.. rust-api:: min_span_tree
+   :description: Generated API reference for the Kruskal's minimum spanning forest crate.
+
+.. literalinclude:: ../../min_span_tree/src/lib.rs
+   :language: rust
+   :linenos:

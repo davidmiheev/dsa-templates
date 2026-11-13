@@ -82,8 +82,9 @@ def _warn_undocumented_crates(app: Sphinx) -> None:
     if missing:
         logger.warning(
             "rustdoc: %d workspace crate(s) have no `.. rust-api::` entry in any "
-            "page and will be missing from the site: %s. Add them to "
-            "docs/source/rust_crates.rst (or their topic page).",
+            "page and will be missing from the site: %s. Add a section with "
+            "`.. rust-api:: <crate>` to the matching category page "
+            "(docs/source/data_structures.rst, graphs.rst, ...) or to the crate's topic page.",
             len(missing),
             ", ".join(missing),
         )
