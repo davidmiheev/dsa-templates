@@ -9,3 +9,14 @@ Binary trees are widely used in computer science for various applications, inclu
     :undoc-members:
     :show-inheritance:
     :inherited-members:
+
+
+Rust Implementation
+-------------------
+
+.. rust-api:: binary_tree
+   :description: Generated API reference for the Binary Tree crate.
+
+.. literalinclude:: ../../binary_tree/src/lib.rs
+   :language: rust
+   :linenos:

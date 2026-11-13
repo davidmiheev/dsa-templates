@@ -1,5 +1,5 @@
 Math Utilities
-=============
+==============
 
 Number-theoretic helpers used throughout competitive programming:
 modular arithmetic, combinatorics, and the like.

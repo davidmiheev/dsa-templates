@@ -15,6 +15,7 @@ link; a warning is logged but the build does not fail.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -63,6 +64,30 @@ def workspace_member_dirs() -> list[str]:
         return list(data.get("workspace", {}).get("members", []))
     except Exception:
         return []
+
+
+def _warn_undocumented_crates(app: Sphinx) -> None:
+    """Warn about workspace crates that no ``.rst`` page references.
+
+    A crate only shows up on the Sphinx site (and its index) when some page
+    contains ``.. rust-api:: <crate>``. Without this check a new workspace
+    member is rendered by ``cargo doc`` but silently missing from the site.
+    """
+    documented: set[str] = set()
+    for rst in Path(app.srcdir).rglob("*.rst"):
+        documented.update(
+            re.findall(r"^\s*\.\.\s+rust-api::\s*(\S+)", rst.read_text(encoding="utf-8"), re.M)
+        )
+    missing = [m for m in workspace_member_dirs() if m not in documented]
+    if missing:
+        logger.warning(
+            "rustdoc: %d workspace crate(s) have no `.. rust-api::` entry in any "
+            "page and will be missing from the site: %s. Add a section with "
+            "`.. rust-api:: <crate>` to the matching category page "
+            "(docs/source/data_structures.rst, graphs.rst, ...) or to the crate's topic page.",
+            len(missing),
+            ", ".join(missing),
+        )
 
 
 def _ensure_cargo_doc_built(app: Sphinx) -> None:
@@ -216,6 +241,7 @@ def _rust_doc_url(crate: str) -> str:
 
 def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("rust-api", RustApiDirective)
+    app.connect("builder-inited", _warn_undocumented_crates)
     app.connect("builder-inited", _ensure_cargo_doc_built)
     app.connect("build-finished", _copy_cargo_doc_into_outdir)
     return {

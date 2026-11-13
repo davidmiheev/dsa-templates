@@ -54,10 +54,11 @@ exclude_patterns = []
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
 html_logo = '_static/logo.png'
+html_css_files = ['custom.css']
 html_theme_options = {
-    'logo': {
-        'image': '_static/logo.png',
-    },
+    # Keep every sub-section visible in the left sidebar instead of folding it.
+    'collapse_navigation': False,
+    'navigation_depth': 2,
 }
 
 add_module_names = False

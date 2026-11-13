@@ -16,8 +16,17 @@ Collection of data structures and algos implementations in Python 3 and Rust
    Hope this website will be useful for your journey in the world of algorithms and data structures.
 
 .. toctree::
+   :maxdepth: 2
    :caption: Contents:
 
+   data_structures
+   trees
+   graphs
+   strings
+   number_theory
+   polynomials
+   geometry
+   techniques
 
 
 Indices and tables
@@ -26,51 +35,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
-   stack
-   queue
-   all_subsets
-   linked_list
-   binary_search
-   binary_tree
-   binary_search_tree
-   tree
-   graph
-   heap
-   trie
-   greedy
-   dynamic_programming
-   backtracking
-   union_find
-   minimum_spanning_tree
-   fenwick_tree
-   segment_tree
-   sparse_table
-   sorted_list
-   interval_tree
-   suffix_array
-   suffix_tree
-   suffix_automaton
-   rolling_hash
-   bit_manipulation
-   mo_algorithm
-   heavy_light_decomposition
-   centroid_decomposition
-   bfs
-   dfs
-   dijkstra
-   topological_sort
-   maximum_flow
-   string_matching
-   knapsack
-   divide_and_conquer
-   sorting
-   multiset
-   one_line
-   math
